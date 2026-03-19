@@ -1,24 +1,65 @@
-import React from 'react';
-import logo from '../assets/logo.svg';
+// src/components/Header.jsx
 
-const Header = () => {
+import React from 'react';
+import { Undo2, Redo2, Calendar, Settings2, Database } from 'lucide-react';
+
+export default function Header({
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
+  onOpenImport,
+  onOpenSettings,
+  title = 'Quản lý lịch họp'
+}) {
   return (
-    <header className="bg-blue-600 text-white p-4 shadow-md">
-      <div className="container mx-auto flex justify-between items-center">
-        <div className="flex items-center space-x-2">
-          <img src={logo} alt="Logo" className="w-10 h-10" />
-          <h1 className="text-2xl font-bold">DangKyHop</h1>
+    <header className="mb-4 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm">
+      <div className="flex items-center gap-3">
+        <Calendar className="h-5 w-5 text-sky-600" />
+        <div>
+          <h1 className="text-lg font-semibold text-slate-900">{title}</h1>
+          <p className="text-sm text-slate-500">Tạo, phân bổ và quản lý lịch họp dễ dàng.</p>
         </div>
-        <nav>
-          <ul className="flex space-x-4">
-            <li><a href="#" className="hover:text-blue-200">Home</a></li>
-            <li><a href="#" className="hover:text-blue-200">About</a></li>
-            <li><a href="#" className="hover:text-blue-200">Contact</a></li>
-          </ul>
-        </nav>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          onClick={onUndo}
+          disabled={!canUndo}
+        >
+          <Undo2 className="h-4 w-4" />
+          Hoàn tác
+        </button>
+        <button
+          type="button"
+          className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          onClick={onRedo}
+          disabled={!canRedo}
+        >
+          <Redo2 className="h-4 w-4" />
+          Làm lại
+        </button>
+
+        <button
+          type="button"
+          className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+          onClick={onOpenImport}
+        >
+          <Database className="h-4 w-4" />
+          Nhập dữ liệu
+        </button>
+
+        <button
+          type="button"
+          className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+          onClick={onOpenSettings}
+        >
+          <Settings2 className="h-4 w-4" />
+          Cài đặt
+        </button>
       </div>
     </header>
   );
-};
-
-export default Header;
+}

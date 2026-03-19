@@ -1,7 +1,7 @@
 {
-  "name": "DangKyHop",
+  "name": "dangkyhop",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,15 +9,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "firebase": "^12.10.0",
-    "react": "^18.3.0",
-    "react-dom": "^18.3.0"
+    "lucide-react": "^0.347.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.0",
-    "autoprefixer": "^10.4.27",
-    "postcss": "^8.5.8",
-    "tailwindcss": "^4.2.1",
     "vite": "^5.0.0"
   }
 }
