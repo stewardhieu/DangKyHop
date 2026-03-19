@@ -55,10 +55,11 @@ export default function VisualTab({
           {currentUser && (
             <button 
               onClick={() => { setIsMultiSelectMode(!isMultiSelectMode); setSidebarSelection([]); }}
-              className={`p-1.5 rounded transition-colors ${isMultiSelectMode ? 'bg-blue-100 text-blue-700' : 'text-slate-500 hover:bg-slate-200'}`}
+              className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold shadow-sm transition-all border ${isMultiSelectMode ? 'bg-blue-600 text-white border-blue-600' : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'}`}
               title="Chế độ chọn nhiều"
             >
-              <ListChecks size={16} />
+              <ListChecks size={14} />
+              <span>{isMultiSelectMode ? 'Đóng Chọn' : 'Chọn Nhiều'}</span>
             </button>
           )}
         </div>
@@ -173,7 +174,7 @@ export default function VisualTab({
 
         <div className="flex-1 overflow-auto relative bg-slate-100 custom-scrollbar">
           <div className="min-w-[1000px]">
-            <div className="flex sticky top-0 z-20 bg-white border-b border-slate-300 shadow-sm">
+            <div className="flex sticky top-0 z-20 bg-white border-b border-slate-300 shadow-sm header-row">
               <div className="w-20 shrink-0 border-r border-slate-200 bg-slate-50 sticky left-0 z-30"></div>
               {DAYS.map((day, idx) => {
                 const currentDate = currentWeekStart ? addDays(currentWeekStart, idx) : null;
@@ -187,7 +188,7 @@ export default function VisualTab({
             </div>
 
             {PERIODS.map(period => (
-              <div key={period.id} className="flex border-b border-slate-200">
+              <div key={period.id} className="flex border-b border-slate-200 period-row">
                 <div className="w-20 shrink-0 bg-slate-50 border-r border-slate-200 flex flex-col items-center justify-center relative sticky left-0 z-10 py-1">
                   <span className="text-xs font-bold text-slate-700">{period.name}</span>
                   <span className="text-[10px] text-slate-500 text-center leading-tight">{period.time}</span>
