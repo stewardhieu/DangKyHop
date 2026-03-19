@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, Users, Info, CheckCircle2 } from 'lucide-react';
-import { DAYS } from '../../constants/data';
+import { DAYS, PERIODS } from '../../constants/data';
 
 export default function SessionModal({
   activeModal,
@@ -28,7 +28,7 @@ export default function SessionModal({
         <div className="flex justify-between items-center p-4 border-b border-slate-200">
           <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
             {activeModal.existingSessionId ? 'Hiệu chỉnh Lịch họp' : 'Khởi tạo Lịch họp mới'} 
-            <span className="text-sm font-normal text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">{DAYS[activeModal.dayIndex]} - {activeModal.hour}:00</span>
+            <span className="text-sm font-normal text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">{DAYS[activeModal.dayIndex]} - {PERIODS.find(p=>p.id===activeModal.periodId)?.name}</span>
           </h3>
           <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-red-500 transition-colors"><X size={20}/></button>
         </div>
@@ -61,8 +61,8 @@ export default function SessionModal({
                   <select value={formData.dayIndex} onChange={e => setFormData({...formData, dayIndex: parseInt(e.target.value)})} className="w-1/2 border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 shadow-sm bg-white">
                     {DAYS.map((d, i) => <option key={i} value={i}>{d}</option>)}
                   </select>
-                  <select value={formData.hour} onChange={e => setFormData({...formData, hour: parseInt(e.target.value)})} className="w-1/2 border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 shadow-sm bg-white">
-                    {Array.from({ length: 14 }, (_, i) => i + 8).map(h => <option key={h} value={h}>{h}:00</option>)}
+                  <select value={formData.periodId} onChange={e => setFormData({...formData, periodId: parseInt(e.target.value)})} className="w-1/2 border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 shadow-sm bg-white">
+                    {PERIODS.map(p => <option key={p.id} value={p.id}>{p.name} ({p.time})</option>)}
                   </select>
                 </div>
               </div>

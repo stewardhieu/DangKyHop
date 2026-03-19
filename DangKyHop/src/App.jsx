@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Calendar, Database, TableProperties, Settings2, UserCircle } from 'lucide-react';
-import { DAYS, HOURS, TAB_ALL, MOCK_CLASSES, MOCK_ROOMS, MOCK_INSTRUCTORS } from './constants/data';
+import { Calendar as CalendarIcon, Database, TableProperties, Settings2, UserCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { DAYS, PERIODS, TAB_ALL } from './constants/data';
+import { startOfWeek, addWeeks, subWeeks, format } from 'date-fns';
+import { vi } from 'date-fns/locale';
 
 import Header from './components/Header';
 import VisualTab from './components/Tabs/VisualTab';
@@ -19,7 +21,8 @@ export default function App() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   
-  const [history, setHistory] = useState([{ classes: MOCK_CLASSES, sessions: [], rooms: MOCK_ROOMS, instructors: MOCK_INSTRUCTORS }]);
+  const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [history, setHistory] = useState([{ classes: [], sessions: [], rooms: [], instructors: [] }]);
   const [historyIndex, setHistoryIndex] = useState(0);
 
   useEffect(() => {
@@ -199,29 +202,29 @@ export default function App() {
   };
   const handleDragStartSession = (e, sessionId) => e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'session', id: sessionId }));
   
-  const handleDropOnGrid = (e, dayIndex, startHour) => {
+  const handleDropOnGrid = (e, dayIndex, periodId) => {
     const dataStr = e.dataTransfer.getData('text/plain');
     if (!dataStr) return;
     const data = JSON.parse(dataStr);
     
     if (data.type === 'class') {
       const validIds = data.ids.filter(id => classes.some(c => c.id === id));
-      if (validIds.length > 0) openSessionModal(dayIndex, startHour, null, validIds);
+      if (validIds.length > 0) openSessionModal(dayIndex, periodId, null, validIds);
     } else if (data.type === 'session') {
       const targetSession = sessions.find(s => s.id === data.id);
-      if (targetSession) saveState(classes, sessions.map(s => s.id === targetSession.id ? { ...s, dayIndex, startHour } : s));
+      if (targetSession) saveState(classes, sessions.map(s => s.id === targetSession.id ? { ...s, dayIndex, periodId } : s));
     }
   };
 
   // --- MODAL LOGIC (CREATE & EDIT SESSION) ---
-  const openSessionModal = (dayIndex = 0, startHour = 8, existingSessionId = null, initialClassIds = []) => {
+  const openSessionModal = (dayIndex = 0, periodId = 1, existingSessionId = null, initialClassIds = []) => {
     if (existingSessionId) {
       const session = sessions.find(s => s.id === existingSessionId);
-      setFormData({ roomName: session.roomName, instructor: session.instructor, selectedClassIds: session.classIds, isNewRoom: false, newRoomName: '', newRoomCapacity: 150, dayIndex: session.dayIndex, hour: session.startHour });
-      setActiveModal({ type: 'create_session', dayIndex, hour: startHour, existingSessionId });
+      setFormData({ roomName: session.roomName, instructor: session.instructor, selectedClassIds: session.classIds, isNewRoom: false, newRoomName: '', newRoomCapacity: 150, dayIndex: session.dayIndex, periodId: session.periodId });
+      setActiveModal({ type: 'create_session', dayIndex, periodId: periodId, existingSessionId });
     } else {
-      setFormData({ roomName: '', instructor: '', selectedClassIds: initialClassIds, isNewRoom: false, newRoomName: '', newRoomCapacity: 150, dayIndex: dayIndex ?? 0, hour: startHour ?? 8 });
-      setActiveModal({ type: 'create_session', dayIndex, hour: startHour, existingSessionId: null });
+      setFormData({ roomName: '', instructor: '', selectedClassIds: initialClassIds, isNewRoom: false, newRoomName: '', newRoomCapacity: 150, dayIndex: dayIndex ?? 0, periodId: periodId ?? 1 });
+      setActiveModal({ type: 'create_session', dayIndex, periodId: periodId, existingSessionId: null });
     }
   };
 
@@ -256,9 +259,9 @@ export default function App() {
     if (activeModal.existingSessionId) {
       const oldSession = newSessions.find(s => s.id === activeModal.existingSessionId);
       oldSession.classIds.forEach(cid => { const c = newClasses.find(nc => nc.id === cid); if(c) c.isAssigned = false; });
-      newSessions = newSessions.map(s => s.id === activeModal.existingSessionId ? { ...s, roomName: finalRoomName, instructor: formData.instructor, classIds: formData.selectedClassIds, totalStudents: currentStudents, dayIndex: formData.dayIndex, startHour: formData.hour } : s);
+      newSessions = newSessions.map(s => s.id === activeModal.existingSessionId ? { ...s, roomName: finalRoomName, instructor: formData.instructor, classIds: formData.selectedClassIds, totalStudents: currentStudents, dayIndex: formData.dayIndex, periodId: formData.periodId } : s);
     } else {
-      newSessions.push({ id: `S_${Date.now()}`, dayIndex: formData.dayIndex, startHour: formData.hour, duration: 1, roomName: finalRoomName, instructor: formData.instructor, classIds: formData.selectedClassIds, totalStudents: currentStudents });
+      newSessions.push({ id: `S_${Date.now()}`, dayIndex: formData.dayIndex, periodId: formData.periodId, duration: 1, roomName: finalRoomName, instructor: formData.instructor, classIds: formData.selectedClassIds, totalStudents: currentStudents });
     }
     
     formData.selectedClassIds.forEach(cid => { const c = newClasses.find(nc => nc.id === cid); if(c) c.isAssigned = true; });
@@ -273,9 +276,63 @@ export default function App() {
     setActiveModal(null);
   };
 
+  const updateClassSessionInline = (classId, action, roomName, dayIndex, periodId) => {
+    if (!currentUser) return;
+    
+    if (action === 'UNASSIGNED') {
+      const newSessions = sessions.map(s => {
+        if (s.classIds.includes(classId)) {
+          const removedClass = classes.find(c => c.id === classId);
+          return {
+            ...s,
+            classIds: s.classIds.filter(id => id !== classId),
+            totalStudents: s.totalStudents - (removedClass ? parseInt(removedClass.students || 0) : 0)
+          };
+        }
+        return s;
+      }).filter(s => s.classIds.length > 0);
+
+      const newClasses = classes.map(c => c.id === classId ? { ...c, isAssigned: false } : c);
+      saveState(newClasses, newSessions);
+    } 
+    else if (action === 'ASSIGNED') {
+      openSessionModal(0, 1, null, [classId]);
+    }
+    else if (action === 'UPDATE') {
+      const session = sessions.find(s => s.classIds.includes(classId));
+      if (session) {
+        const targetSession = sessions.find(s => s.dayIndex === dayIndex && s.periodId === periodId && s.roomName === roomName && s.id !== session.id);
+        const classObj = classes.find(c => c.id === classId);
+        const stCount = parseInt(classObj?.students || 0);
+        
+        let newSessions;
+        if (targetSession) {
+          newSessions = sessions.map(s => {
+            if (s.id === session.id) {
+               return { ...s, classIds: s.classIds.filter(id => id !== classId), totalStudents: s.totalStudents - stCount };
+            }
+            if (s.id === targetSession.id) {
+               return { ...s, classIds: [...new Set([...s.classIds, classId])], totalStudents: s.totalStudents + stCount };
+            }
+            return s;
+          }).filter(s => s.classIds.length > 0);
+        } else {
+          if (session.classIds.length > 1) {
+             const newSession = { ...session, id: `S_${Date.now()}`, dayIndex, periodId, roomName, classIds: [classId], totalStudents: stCount };
+             newSessions = sessions.map(s => s.id === session.id ? { ...s, classIds: s.classIds.filter(id=>id!==classId), totalStudents: s.totalStudents - stCount } : s);
+             newSessions.push(newSession);
+          } else {
+            newSessions = sessions.map(s => s.id === session.id ? { ...s, dayIndex, periodId, roomName } : s);
+          }
+        }
+        saveState(classes, newSessions);
+      }
+    }
+  };
+
   // --- AUTO-SCHEDULE ALGORITHM (BIN PACKING) ---
   const executeAutoSchedule = (config) => {
-    const { allowedDays, allowedHours, maxClassesPerSession } = config;
+    const { allowedDays, allowedPeriods, maxClassesPerSession } = config;
 
     if (sidebarSelection.length === 0) return;
     const classesToSchedule = classes.filter(c => sidebarSelection.includes(c.id));
@@ -319,7 +376,7 @@ export default function App() {
 
         let scheduled = false;
         for (let d of allowedDays) {
-          for (let h of allowedHours) {
+          for (let pId of allowedPeriods) {
             const instBusy = newSessions.some(s => s.dayIndex === d && s.startHour === h && s.instructor === vs.instructor);
             if (instBusy) continue;
 
@@ -363,18 +420,34 @@ export default function App() {
     <div className="h-screen bg-slate-100 text-slate-900 font-sans p-4 flex flex-col overflow-hidden">
       <Header classes={classes} rooms={rooms} historyIndex={historyIndex} historyLength={history.length} handleUndo={handleUndo} handleRedo={handleRedo} onOpenLogin={() => setIsLoginModalOpen(true)} />
 
-      <div className="flex bg-white border border-slate-200 rounded-t-lg shadow-sm overflow-x-auto custom-scrollbar mb-0">
-        <button onClick={() => setMainTab('VISUAL')} className={`px-5 py-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition-colors ${mainTab === 'VISUAL' ? 'border-blue-600 text-blue-700 bg-blue-50/30' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}><Calendar size={16}/> Lịch Trực Quan</button>
-        <button onClick={() => setMainTab('TABLE')} className={`px-5 py-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition-colors ${mainTab === 'TABLE' ? 'border-blue-600 text-blue-700 bg-blue-50/30' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}><TableProperties size={16}/> Danh sách phân bổ</button>
-        <div className="w-px h-6 bg-slate-300 mx-2 self-center"></div>
-        <button onClick={() => setMainTab('DATA_CLASS')} className={`px-5 py-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition-colors ${mainTab === 'DATA_CLASS' ? 'border-blue-600 text-blue-700 bg-blue-50/30' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}><Database size={16}/> Dữ liệu Lớp học</button>
-        <button onClick={() => setMainTab('DATA_ROOM')} className={`px-5 py-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition-colors ${mainTab === 'DATA_ROOM' ? 'border-blue-600 text-blue-700 bg-blue-50/30' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}><Settings2 size={16}/> Dữ liệu Phòng học</button>
-        <button onClick={() => setMainTab('DATA_INSTRUCTOR')} className={`px-5 py-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition-colors ${mainTab === 'DATA_INSTRUCTOR' ? 'border-blue-600 text-blue-700 bg-blue-50/30' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}><UserCircle size={16}/> Dữ liệu Giảng viên</button>
+      <div className="flex bg-white border border-slate-200 rounded-t-lg shadow-sm overflow-x-auto custom-scrollbar mb-0 items-center justify-between">
+        <div className="flex">
+          <button onClick={() => setMainTab('VISUAL')} className={`px-5 py-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition-colors ${mainTab === 'VISUAL' ? 'border-blue-600 text-blue-700 bg-blue-50/30' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}><CalendarIcon size={16}/> Lịch Trực Quan</button>
+          <button onClick={() => setMainTab('TABLE')} className={`px-5 py-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition-colors ${mainTab === 'TABLE' ? 'border-blue-600 text-blue-700 bg-blue-50/30' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}><TableProperties size={16}/> Danh sách phân bổ</button>
+          <div className="w-px h-6 bg-slate-300 mx-2 self-center"></div>
+          <button onClick={() => setMainTab('DATA_CLASS')} className={`px-5 py-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition-colors ${mainTab === 'DATA_CLASS' ? 'border-blue-600 text-blue-700 bg-blue-50/30' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}><Database size={16}/> Dữ liệu Lớp học</button>
+          <button onClick={() => setMainTab('DATA_ROOM')} className={`px-5 py-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition-colors ${mainTab === 'DATA_ROOM' ? 'border-blue-600 text-blue-700 bg-blue-50/30' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}><Settings2 size={16}/> Dữ liệu Phòng học</button>
+          <button onClick={() => setMainTab('DATA_INSTRUCTOR')} className={`px-5 py-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition-colors ${mainTab === 'DATA_INSTRUCTOR' ? 'border-blue-600 text-blue-700 bg-blue-50/30' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}><UserCircle size={16}/> Dữ liệu Giảng viên</button>
+        </div>
+        
+        {mainTab === 'VISUAL' && (
+          <div className="flex items-center gap-3 px-4 border-l border-slate-300">
+            <button onClick={() => setCurrentWeekStart(subWeeks(currentWeekStart, 1))} className="p-1.5 hover:bg-slate-100 rounded text-slate-600 transition-colors">
+              <ChevronLeft size={20} />
+            </button>
+            <span className="text-sm font-bold text-slate-700 tracking-wide min-w-[200px] text-center">
+              Tuần bắt đầu: {format(currentWeekStart, 'dd/MM/yyyy')}
+            </span>
+            <button onClick={() => setCurrentWeekStart(addWeeks(currentWeekStart, 1))} className="p-1.5 hover:bg-slate-100 rounded text-slate-600 transition-colors">
+              <ChevronRight size={20} />
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-1 overflow-hidden shadow-sm bg-white rounded-b-lg border-x border-b border-slate-200">
-        {mainTab === 'VISUAL' && <VisualTab classes={classes} sessions={sessions} instructors={instructors} activeInstructorTab={activeInstructorTab} setActiveInstructorTab={setActiveInstructorTab} roomFilter={roomFilter} setRoomFilter={setRoomFilter} sidebarSelection={sidebarSelection} setSidebarSelection={setSidebarSelection} isMultiSelectMode={isMultiSelectMode} setIsMultiSelectMode={setIsMultiSelectMode} handleDragStartClass={handleDragStartClass} handleDragStartSession={handleDragStartSession} handleDropOnGrid={handleDropOnGrid} executeAutoSchedule={executeAutoSchedule} openSessionModal={openSessionModal} sidebarSearch={sidebarSearch} setSidebarSearch={setSidebarSearch} setActiveModal={setActiveModal} />}
-        {mainTab === 'TABLE' && <TableTab classes={classes} sessions={sessions} tableSearch={tableSearch} setTableSearch={setTableSearch} sortConfig={sortConfig} requestSort={requestSort} applySort={applySort} />}
+        {mainTab === 'VISUAL' && <VisualTab currentWeekStart={currentWeekStart} classes={classes} sessions={sessions} instructors={instructors} activeInstructorTab={activeInstructorTab} setActiveInstructorTab={setActiveInstructorTab} roomFilter={roomFilter} setRoomFilter={setRoomFilter} sidebarSelection={sidebarSelection} setSidebarSelection={setSidebarSelection} isMultiSelectMode={isMultiSelectMode} setIsMultiSelectMode={setIsMultiSelectMode} handleDragStartClass={handleDragStartClass} handleDragStartSession={handleDragStartSession} handleDropOnGrid={handleDropOnGrid} executeAutoSchedule={executeAutoSchedule} openSessionModal={openSessionModal} sidebarSearch={sidebarSearch} setSidebarSearch={setSidebarSearch} setActiveModal={setActiveModal} />}
+        {mainTab === 'TABLE' && <TableTab classes={classes} sessions={sessions} tableSearch={tableSearch} setTableSearch={setTableSearch} sortConfig={sortConfig} requestSort={requestSort} applySort={applySort} rooms={rooms} updateClassSessionInline={updateClassSessionInline} />}
         {(mainTab === 'DATA_CLASS' || mainTab === 'DATA_ROOM' || mainTab === 'DATA_INSTRUCTOR') && <DataTab type={mainTab} classes={classes} rooms={rooms} instructors={instructors} sessions={sessions} selectedRows={selectedRows} editingId={editingId} editFormData={editFormData} sortConfig={sortConfig} requestSort={requestSort} applySort={applySort} handleSelectRow={handleSelectRow} handleSelectAll={handleSelectAll} handleBulkDelete={handleBulkDelete} newClassData={newClassData} setNewClassData={setNewClassData} handleAddClassInline={handleAddClassInline} newRoomData={newRoomData} setNewRoomData={setNewRoomData} handleAddRoomInline={handleAddRoomInline} newInstructorName={newInstructorName} setNewInstructorName={setNewInstructorName} handleAddInstructorInline={handleAddInstructorInline} setEditFormData={setEditFormData} saveInlineEdit={saveInlineEdit} setEditingId={setEditingId} startInlineEdit={startInlineEdit} deleteSingle={deleteSingle} setIsImportModalOpen={setIsImportModalOpen} />}
       </div>
 

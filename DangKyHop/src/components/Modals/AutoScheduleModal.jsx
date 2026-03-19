@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { X, Wand2 } from 'lucide-react';
-import { DAYS, HOURS } from '../../constants/data';
+import { DAYS, PERIODS } from '../../constants/data';
 
 export default function AutoScheduleModal({ activeModal, setActiveModal, executeAutoSchedule, sidebarSelectionCount }) {
   if (activeModal?.type !== 'auto_schedule') return null;
 
   const [config, setConfig] = useState({
     allowedDays: [0, 1, 2, 3, 4, 5, 6],
-    allowedHours: HOURS,
+    allowedPeriods: PERIODS.map(p=>p.id),
     maxClassesPerSession: 0
   });
 
@@ -18,16 +18,16 @@ export default function AutoScheduleModal({ activeModal, setActiveModal, execute
     }));
   };
 
-  const toggleHour = (hour) => {
+  const togglePeriod = (pId) => {
     setConfig(prev => ({
       ...prev,
-      allowedHours: prev.allowedHours.includes(hour) ? prev.allowedHours.filter(h => h !== hour) : [...prev.allowedHours, hour].sort((a, b) => a - b)
+      allowedPeriods: prev.allowedPeriods.includes(pId) ? prev.allowedPeriods.filter(h => h !== pId) : [...prev.allowedPeriods, pId].sort((a, b) => a - b)
     }));
   };
 
   const handleRun = () => {
-    if (config.allowedDays.length === 0 || config.allowedHours.length === 0) {
-      alert("Vui lòng chọn khung thời gian (ngày, giờ) cho phép!"); return;
+    if (config.allowedDays.length === 0 || config.allowedPeriods.length === 0) {
+      alert("Vui lòng chọn khung thời gian (ngày, tiết) cho phép!"); return;
     }
     executeAutoSchedule(config);
   };
@@ -72,19 +72,19 @@ export default function AutoScheduleModal({ activeModal, setActiveModal, execute
             
             <div className="pt-4 border-t border-slate-100">
               <div className="flex justify-between items-center mb-2">
-                <label className="block text-sm font-bold text-slate-700 uppercase tracking-wide text-xs">Khung giờ quy định</label>
+                <label className="block text-sm font-bold text-slate-700 uppercase tracking-wide text-xs">Phạm vi Tiết học quy định</label>
                 <div className="flex gap-2">
-                  <button onClick={() => setConfig({...config, allowedHours: HOURS})} className="text-[10px] bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded text-slate-600 font-semibold transition-colors">Chọn tất cả</button>
-                  <button onClick={() => setConfig({...config, allowedHours: []})} className="text-[10px] bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded text-slate-600 font-semibold transition-colors">Bỏ chọn</button>
+                  <button onClick={() => setConfig({...config, allowedPeriods: PERIODS.map(p=>p.id)})} className="text-[10px] bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded text-slate-600 font-semibold transition-colors">Chọn tất cả</button>
+                  <button onClick={() => setConfig({...config, allowedPeriods: []})} className="text-[10px] bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded text-slate-600 font-semibold transition-colors">Bỏ chọn</button>
                 </div>
               </div>
               <div className="flex gap-1.5 flex-wrap">
-                {HOURS.map(hour => (
+                {PERIODS.map(period => (
                   <button 
-                    key={hour} onClick={() => toggleHour(hour)}
-                    className={`px-2 py-1 rounded border text-[11px] font-bold transition-all ${config.allowedHours.includes(hour) ? 'bg-amber-500 text-white border-amber-600 shadow-sm' : 'bg-white text-slate-500 border-slate-300 hover:bg-slate-50'}`}
+                    key={period.id} onClick={() => togglePeriod(period.id)}
+                    className={`px-2 py-1 rounded border text-[11px] font-bold transition-all ${config.allowedPeriods.includes(period.id) ? 'bg-amber-500 text-white border-amber-600 shadow-sm' : 'bg-white text-slate-500 border-slate-300 hover:bg-slate-50'}`}
                   >
-                    {hour}:00
+                    {period.name}
                   </button>
                 ))}
               </div>

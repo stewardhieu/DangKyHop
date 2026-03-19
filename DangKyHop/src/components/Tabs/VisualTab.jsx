@@ -1,7 +1,8 @@
-import React from 'react';
-import { LayoutTemplate, ListChecks, Info, Users, UserCircle, Plus, Wand2 } from 'lucide-react';
-import { DAYS, HOURS, TAB_ALL } from '../../constants/data';
+import React, { useState } from 'react';
+import { LayoutTemplate, ListChecks, Info, Users, UserCircle, Plus, Wand2, Filter } from 'lucide-react';
+import { DAYS, PERIODS, TAB_ALL } from '../../constants/data';
 import { useAuth } from '../../contexts/AuthContext';
+import { addDays, format } from 'date-fns';
 
 export default function VisualTab({
   classes,
@@ -22,11 +23,29 @@ export default function VisualTab({
   openSessionModal,
   sidebarSearch,
   setSidebarSearch,
-  setActiveModal
+  setActiveModal,
+  currentWeekStart
 }) {
   const { currentUser } = useAuth();
-  const unassignedClasses = classes.filter(c => !c.isAssigned && (activeInstructorTab === TAB_ALL || c.instructor === activeInstructorTab) && (c.name.toLowerCase().includes(sidebarSearch.toLowerCase()) || c.instructor.toLowerCase().includes(sidebarSearch.toLowerCase())));
+  
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [filterMajor, setFilterMajor] = useState('');
+  const [filterCohort, setFilterCohort] = useState('');
+  const [filterMinStudents, setFilterMinStudents] = useState('');
+
   const uniqueInstructorsForTab = [TAB_ALL, ...instructors];
+  const uniqueMajors = Array.from(new Set(classes.map(c => c.major))).filter(Boolean).sort();
+  const uniqueCohorts = Array.from(new Set(classes.map(c=>c.name.split('-')[0]))).filter(Boolean).sort();
+
+  const unassignedClasses = classes.filter(c => {
+    if (c.isAssigned) return false;
+    if (activeInstructorTab !== TAB_ALL && c.instructor !== activeInstructorTab) return false;
+    if (sidebarSearch && !c.name.toLowerCase().includes(sidebarSearch.toLowerCase()) && !c.instructor.toLowerCase().includes(sidebarSearch.toLowerCase())) return false;
+    if (filterMajor && c.major !== filterMajor) return false;
+    if (filterCohort && !c.name.startsWith(filterCohort)) return false;
+    if (filterMinStudents && c.students < parseInt(filterMinStudents)) return false;
+    return true;
+  });
 
   return (
     <div className="flex flex-1 gap-4 overflow-hidden rounded-b-lg">
@@ -51,6 +70,26 @@ export default function VisualTab({
             onChange={(e) => setSidebarSearch(e.target.value)}
             className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs focus:border-blue-500 transition-colors"
           />
+          <button onClick={() => setShowAdvancedFilters(!showAdvancedFilters)} className="text-xs flex items-center justify-center gap-1 text-slate-500 hover:text-blue-600 font-medium py-1 transition-colors border border-dashed border-slate-300 rounded hover:border-blue-300 bg-slate-50">
+            <Filter size={14} /> Lọc nâng cao (Khoa, Khóa, Sĩ số) {showAdvancedFilters ? '▲' : '▼'}
+          </button>
+          
+          {showAdvancedFilters && (
+            <div className="flex flex-col gap-2 p-2 bg-slate-50 border border-slate-200 rounded shadow-inner text-xs animate-in slide-in-from-top-2 duration-200">
+              <select value={filterMajor} onChange={e => setFilterMajor(e.target.value)} className="border border-slate-300 rounded px-2 py-1.5 focus:border-blue-500 focus:outline-none bg-white">
+                <option value="">-- Tất cả Khoa --</option>
+                {uniqueMajors.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+              <div className="flex gap-2">
+                <select value={filterCohort} onChange={e => setFilterCohort(e.target.value)} className="w-1/2 border border-slate-300 rounded px-2 py-1.5 focus:border-blue-500 focus:outline-none bg-white">
+                  <option value="">-- Tất cả Khóa --</option>
+                  {uniqueCohorts.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <input type="number" placeholder="Sĩ số tối thiểu" value={filterMinStudents} onChange={e=>setFilterMinStudents(e.target.value)} className="w-1/2 border border-slate-300 rounded px-2 py-1.5 focus:border-blue-500 focus:outline-none bg-white" min="0" />
+              </div>
+            </div>
+          )}
+
           {isMultiSelectMode && currentUser && (
             <div className="flex flex-col gap-2 mt-1">
               <label className="flex items-center gap-2 text-sm text-slate-700 font-medium cursor-pointer hover:text-blue-700 transition-colors">
@@ -135,18 +174,27 @@ export default function VisualTab({
         <div className="flex-1 overflow-auto relative bg-slate-100 custom-scrollbar">
           <div className="min-w-[1000px]">
             <div className="flex sticky top-0 z-20 bg-white border-b border-slate-300 shadow-sm">
-              <div className="w-16 shrink-0 border-r border-slate-200 bg-slate-50 sticky left-0 z-30"></div>
-              {DAYS.map((day, idx) => <div key={idx} className={`flex-1 p-2 text-center text-sm font-bold border-r border-slate-200 ${(idx === 5 || idx === 6) ? 'text-amber-700 bg-amber-50' : 'text-slate-700'}`}>{day}</div>)}
+              <div className="w-20 shrink-0 border-r border-slate-200 bg-slate-50 sticky left-0 z-30"></div>
+              {DAYS.map((day, idx) => {
+                const currentDate = currentWeekStart ? addDays(currentWeekStart, idx) : null;
+                return (
+                  <div key={idx} className={`flex-1 p-2 text-center border-r border-slate-200 ${(idx === 5 || idx === 6) ? 'text-amber-700 bg-amber-50' : 'text-slate-700'}`}>
+                    <div className="font-bold text-sm">{day}</div>
+                    {currentDate && <div className="text-xs text-slate-500">{format(currentDate, 'dd/MM')}</div>}
+                  </div>
+                );
+              })}
             </div>
 
-            {HOURS.map(hour => (
-              <div key={hour} className="flex border-b border-slate-200">
-                <div className="w-16 shrink-0 bg-slate-50 border-r border-slate-200 flex items-center justify-center text-xs font-bold text-slate-500 relative sticky left-0 z-10">
-                  <span className="px-1 text-center w-full">{`${hour}:00`}</span>
+            {PERIODS.map(period => (
+              <div key={period.id} className="flex border-b border-slate-200">
+                <div className="w-20 shrink-0 bg-slate-50 border-r border-slate-200 flex flex-col items-center justify-center relative sticky left-0 z-10 py-1">
+                  <span className="text-xs font-bold text-slate-700">{period.name}</span>
+                  <span className="text-[10px] text-slate-500 text-center leading-tight">{period.time}</span>
                 </div>
                 
                 {DAYS.map((_, dayIdx) => {
-                  const slotSessions = sessions.filter(s => s.dayIndex === dayIdx && s.startHour === hour);
+                  const slotSessions = sessions.filter(s => s.dayIndex === dayIdx && s.periodId === period.id);
                   const visibleSessions = slotSessions.filter(s => {
                     return (!roomFilter || s.roomName.toLowerCase().includes(roomFilter.toLowerCase())) &&
                            (activeInstructorTab === TAB_ALL || s.instructor === activeInstructorTab);
@@ -154,15 +202,15 @@ export default function VisualTab({
 
                   return (
                     <div 
-                      key={`${dayIdx}-${hour}`} 
+                      key={`${dayIdx}-${period.id}`} 
                       className={`flex-1 relative border-r border-slate-200 p-1 min-h-[85px] group bg-white min-w-0 transition-colors ${currentUser ? 'hover:bg-blue-50 cursor-pointer' : ''}`}
-                      onClick={() => { if(currentUser) openSessionModal(dayIdx, hour, null); }}
+                      onClick={() => { if(currentUser) openSessionModal(dayIdx, period.id, null); }}
                       onDragOver={(e) => { if(currentUser) { e.preventDefault(); e.currentTarget.classList.add('bg-blue-100'); } }}
                       onDragLeave={(e) => { if(currentUser) e.currentTarget.classList.remove('bg-blue-100'); }}
                       onDrop={(e) => {
                         if(currentUser) {
                           e.currentTarget.classList.remove('bg-blue-100');
-                          handleDropOnGrid(e, dayIdx, hour);
+                          handleDropOnGrid(e, dayIdx, period.id);
                         }
                       }}
                     >
@@ -176,7 +224,7 @@ export default function VisualTab({
                               key={session.id} 
                               draggable={!!currentUser}
                               onDragStart={(e) => { if(currentUser) { e.stopPropagation(); handleDragStartSession(e, session.id); } }}
-                              onClick={(e) => { if(currentUser) { e.stopPropagation(); openSessionModal(dayIdx, hour, session.id); } }}
+                              onClick={(e) => { if(currentUser) { e.stopPropagation(); openSessionModal(dayIdx, period.id, session.id); } }}
                               className={`bg-blue-50 border border-blue-300 rounded p-1.5 shadow-sm flex flex-col transition-transform w-full overflow-hidden ${currentUser ? 'hover:-translate-y-0.5 cursor-grab active:cursor-grabbing' : ''}`}
                             >
                               <div className="flex justify-between items-start mb-0.5 gap-1">
