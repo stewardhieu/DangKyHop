@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { X, Wand2 } from 'lucide-react';
 import { DAYS, PERIODS } from '../../constants/data';
+import { format, addDays } from 'date-fns';
 
-export default function AutoScheduleModal({ activeModal, setActiveModal, executeAutoSchedule, sidebarSelectionCount }) {
+export default function AutoScheduleModal({ activeModal, setActiveModal, executeAutoSchedule, sidebarSelectionCount, currentWeekStart }) {
   if (activeModal?.type !== 'auto_schedule') return null;
 
   const [config, setConfig] = useState({
     allowedDays: [0, 1, 2, 3, 4, 5, 6],
     allowedPeriods: PERIODS.map(p=>p.id),
-    maxClassesPerSession: 0
+    maxClassesPerSession: 0,
+    startDate: currentWeekStart ? format(currentWeekStart, 'yyyy-MM-dd') : '',
+    endDate: currentWeekStart ? format(addDays(currentWeekStart, 6), 'yyyy-MM-dd') : ''
   });
 
   const toggleDay = (dayIdx) => {
@@ -28,6 +31,9 @@ export default function AutoScheduleModal({ activeModal, setActiveModal, execute
   const handleRun = () => {
     if (config.allowedDays.length === 0 || config.allowedPeriods.length === 0) {
       alert("Vui lòng chọn khung thời gian (ngày, tiết) cho phép!"); return;
+    }
+    if (!config.startDate || !config.endDate) {
+      alert("Vui lòng nhập khoảng Ngày phân bổ (Từ ngày - Đến ngày)!"); return;
     }
     executeAutoSchedule(config);
   };
@@ -49,7 +55,15 @@ export default function AutoScheduleModal({ activeModal, setActiveModal, execute
           
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide text-xs">Phạm vi Ngày phân bổ</label>
+              <label className="block text-sm font-bold text-slate-700 mb-1.5 uppercase tracking-wide text-xs">Khoảng thời gian phân bổ (Từ - Đến)</label>
+              <div className="flex gap-2">
+                <input type="date" value={config.startDate} onChange={(e) => setConfig({...config, startDate: e.target.value})} className="w-1/2 border border-slate-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500 bg-white cursor-pointer shadow-sm" />
+                <input type="date" value={config.endDate} onChange={(e) => setConfig({...config, endDate: e.target.value})} className="w-1/2 border border-slate-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500 bg-white cursor-pointer shadow-sm" />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide text-xs">Khung ngày trong tuần cho phép</label>
               <div className="flex gap-2 flex-wrap">
                 {DAYS.map((day, idx) => (
                   <button 

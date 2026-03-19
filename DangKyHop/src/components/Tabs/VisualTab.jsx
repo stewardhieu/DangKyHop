@@ -194,7 +194,17 @@ export default function VisualTab({
                 </div>
                 
                 {DAYS.map((_, dayIdx) => {
-                  const slotSessions = sessions.filter(s => s.dayIndex === dayIdx && s.periodId === period.id);
+                  const cellDate = currentWeekStart ? format(addDays(currentWeekStart, dayIdx), 'yyyy-MM-dd') : null;
+                  const slotSessions = sessions.filter(s => {
+                    const isCorrectPeriod = s.periodId === period.id;
+                    if (cellDate && s.date) {
+                      return isCorrectPeriod && s.date === cellDate;
+                    }
+                    if (!s.date && cellDate) {
+                       return false; 
+                    }
+                    return isCorrectPeriod && s.dayIndex === dayIdx;
+                  });
                   const visibleSessions = slotSessions.filter(s => {
                     return (!roomFilter || s.roomName.toLowerCase().includes(roomFilter.toLowerCase())) &&
                            (activeInstructorTab === TAB_ALL || s.instructor === activeInstructorTab);

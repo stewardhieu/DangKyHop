@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Calendar as CalendarIcon, Database, TableProperties, Settings2, UserCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { DAYS, PERIODS, TAB_ALL } from './constants/data';
-import { startOfWeek, addWeeks, subWeeks, format, addDays } from 'date-fns';
+import { startOfWeek, addWeeks, subWeeks, format, addDays, getDay } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
 import Header from './components/Header';
@@ -221,10 +221,10 @@ export default function App() {
   const openSessionModal = (dayIndex = 0, periodId = 1, existingSessionId = null, initialClassIds = []) => {
     if (existingSessionId) {
       const session = sessions.find(s => s.id === existingSessionId);
-      setFormData({ roomName: session.roomName, instructor: session.instructor, selectedClassIds: session.classIds, isNewRoom: false, newRoomName: '', newRoomCapacity: 150, dayIndex: session.dayIndex, periodId: session.periodId });
+      setFormData({ roomName: session.roomName, instructor: session.instructor, selectedClassIds: session.classIds, isNewRoom: false, newRoomName: '', newRoomCapacity: 150, dayIndex: session.dayIndex, periodId: session.periodId, date: session.date || format(addDays(currentWeekStart, session.dayIndex), 'yyyy-MM-dd') });
       setActiveModal({ type: 'create_session', dayIndex, periodId: periodId, existingSessionId });
     } else {
-      setFormData({ roomName: '', instructor: '', selectedClassIds: initialClassIds, isNewRoom: false, newRoomName: '', newRoomCapacity: 150, dayIndex: dayIndex ?? 0, periodId: periodId ?? 1 });
+      setFormData({ roomName: '', instructor: '', selectedClassIds: initialClassIds, isNewRoom: false, newRoomName: '', newRoomCapacity: 150, dayIndex: dayIndex ?? 0, periodId: periodId ?? 1, date: format(addDays(currentWeekStart, dayIndex ?? 0), 'yyyy-MM-dd') });
       setActiveModal({ type: 'create_session', dayIndex, periodId: periodId, existingSessionId: null });
     }
   };
@@ -260,9 +260,9 @@ export default function App() {
     if (activeModal.existingSessionId) {
       const oldSession = newSessions.find(s => s.id === activeModal.existingSessionId);
       oldSession.classIds.forEach(cid => { const c = newClasses.find(nc => nc.id === cid); if(c) c.isAssigned = false; });
-      newSessions = newSessions.map(s => s.id === activeModal.existingSessionId ? { ...s, roomName: finalRoomName, instructor: formData.instructor, classIds: formData.selectedClassIds, totalStudents: currentStudents, dayIndex: formData.dayIndex, periodId: formData.periodId, date: format(addDays(currentWeekStart, formData.dayIndex), 'yyyy-MM-dd') } : s);
+      newSessions = newSessions.map(s => s.id === activeModal.existingSessionId ? { ...s, roomName: finalRoomName, instructor: formData.instructor, classIds: formData.selectedClassIds, totalStudents: currentStudents, dayIndex: formData.dayIndex, periodId: formData.periodId, date: formData.date } : s);
     } else {
-      newSessions.push({ id: `S_${Date.now()}`, dayIndex: formData.dayIndex, periodId: formData.periodId, date: format(addDays(currentWeekStart, formData.dayIndex), 'yyyy-MM-dd'), duration: 1, roomName: finalRoomName, instructor: formData.instructor, classIds: formData.selectedClassIds, totalStudents: currentStudents });
+      newSessions.push({ id: `S_${Date.now()}`, dayIndex: formData.dayIndex, periodId: formData.periodId, date: formData.date, duration: 1, roomName: finalRoomName, instructor: formData.instructor, classIds: formData.selectedClassIds, totalStudents: currentStudents });
     }
     
     formData.selectedClassIds.forEach(cid => { const c = newClasses.find(nc => nc.id === cid); if(c) c.isAssigned = true; });
@@ -352,7 +352,7 @@ export default function App() {
 
   // --- AUTO-SCHEDULE ALGORITHM (BIN PACKING) ---
   const executeAutoSchedule = (config) => {
-    const { allowedDays, allowedPeriods, maxClassesPerSession } = config;
+    const { allowedDays, allowedPeriods, maxClassesPerSession, startDate, endDate } = config;
 
     if (sidebarSelection.length === 0) return;
     const classesToSchedule = classes.filter(c => sidebarSelection.includes(c.id));
@@ -360,6 +360,24 @@ export default function App() {
 
     if (sortedRooms.length === 0) {
       alert("Lỗi Hệ thống: Không có dữ liệu Phòng họp thực tế để thực hiện phân bổ."); return;
+    }
+
+    // Generate target dates from range
+    const targetDates = [];
+    if (startDate && endDate) {
+      let curr = new Date(startDate);
+      const endObj = new Date(endDate);
+      while (curr <= endObj) {
+        const dayIdx = (getDay(curr) + 6) % 7; 
+        if (allowedDays.includes(dayIdx)) {
+          targetDates.push({ dateStr: format(curr, 'yyyy-MM-dd'), dayIndex: dayIdx });
+        }
+        curr = addDays(curr, 1);
+      }
+    }
+
+    if (targetDates.length === 0) {
+      alert("Không tìm thấy ngày nào hợp lệ trong khoảng thời gian đã chọn!"); return;
     }
 
     const groupedByInst = {};
@@ -395,16 +413,17 @@ export default function App() {
         if (validRooms.length === 0) { failedToSchedule.push(...vs.classes.map(c => c.name)); return; }
 
         let scheduled = false;
-        for (let d of allowedDays) {
+        for (let target of targetDates) {
+          const { dateStr, dayIndex } = target;
           for (let pId of allowedPeriods) {
-            const instBusy = newSessions.some(s => s.dayIndex === d && s.periodId === pId && s.instructor === vs.instructor);
+            const instBusy = newSessions.some(s => s.date === dateStr && s.periodId === pId && s.instructor === vs.instructor);
             if (instBusy) continue;
 
             for (let room of validRooms) {
-              const roomBusy = newSessions.some(s => s.dayIndex === d && s.periodId === pId && s.roomName === room.name);
+              const roomBusy = newSessions.some(s => s.date === dateStr && s.periodId === pId && s.roomName === room.name);
               if (!roomBusy) {
-                newSessions.push({ id: `S_AUTO_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`, dayIndex: d, periodId: pId, date: format(addDays(currentWeekStart, d), 'yyyy-MM-dd'), duration: 1, roomName: room.name, instructor: vs.instructor, classIds: vs.classes.map(c => c.id), totalStudents: vs.totalStudents });
-                vs.classes.forEach(c => { const target = newClasses.find(nc => nc.id === c.id); if (target) target.isAssigned = true; });
+                newSessions.push({ id: `S_AUTO_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`, dayIndex, periodId: pId, date: dateStr, duration: 1, roomName: room.name, instructor: vs.instructor, classIds: vs.classes.map(c => c.id), totalStudents: vs.totalStudents });
+                vs.classes.forEach(c => { const nc = newClasses.find(n => n.id === c.id); if (nc) nc.isAssigned = true; });
                 scheduled = true; successCount += vs.classes.length; break;
               }
             }
@@ -488,7 +507,7 @@ export default function App() {
 
       <ImportModal isImportModalOpen={isImportModalOpen} setIsImportModalOpen={setIsImportModalOpen} mainTab={mainTab} pasteData={pasteData} setPasteData={setPasteData} processImport={processImport} />
       <SessionModal activeModal={activeModal} setActiveModal={setActiveModal} formData={formData} setFormData={setFormData} rooms={rooms} instructors={instructors} classes={classes} sessions={sessions} deleteSession={deleteSession} saveSession={saveSession} toggleClassSelection={toggleClassSelection} />
-      <AutoScheduleModal activeModal={activeModal} setActiveModal={setActiveModal} executeAutoSchedule={executeAutoSchedule} sidebarSelectionCount={sidebarSelection.length} />
+      <AutoScheduleModal activeModal={activeModal} setActiveModal={setActiveModal} executeAutoSchedule={executeAutoSchedule} sidebarSelectionCount={sidebarSelection.length} currentWeekStart={currentWeekStart} />
       <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
       <style dangerouslySetInnerHTML={{__html: `
         .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }

@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, Users, Info, CheckCircle2 } from 'lucide-react';
 import { DAYS, PERIODS } from '../../constants/data';
+import { getDay } from 'date-fns';
 
 export default function SessionModal({
   activeModal,
@@ -58,9 +59,19 @@ export default function SessionModal({
               <div>
                 <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase">Thời gian</label>
                 <div className="flex gap-2">
-                  <select value={formData.dayIndex} onChange={e => setFormData({...formData, dayIndex: parseInt(e.target.value)})} className="w-1/2 border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 shadow-sm bg-white">
-                    {DAYS.map((d, i) => <option key={i} value={i}>{d}</option>)}
-                  </select>
+                  <input 
+                    type="date" 
+                    value={formData.date || ''} 
+                    onChange={e => {
+                      if (e.target.value) {
+                         const d = new Date(e.target.value);
+                         // getDay from date-fns
+                         const dayIdx = (getDay(d) + 6) % 7; 
+                         setFormData({...formData, date: e.target.value, dayIndex: dayIdx});
+                      }
+                    }} 
+                    className="w-1/2 border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 shadow-sm bg-white cursor-pointer"
+                  />
                   <select value={formData.periodId} onChange={e => setFormData({...formData, periodId: parseInt(e.target.value)})} className="w-1/2 border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 shadow-sm bg-white">
                     {PERIODS.map(p => <option key={p.id} value={p.id}>{p.name} ({p.time})</option>)}
                   </select>
