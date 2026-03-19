@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Calendar as CalendarIcon, Database, TableProperties, Settings2, UserCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { DAYS, PERIODS, TAB_ALL } from './constants/data';
-import { startOfWeek, addWeeks, subWeeks, format } from 'date-fns';
+import { startOfWeek, addWeeks, subWeeks, format, addDays } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
 import Header from './components/Header';
@@ -397,7 +397,7 @@ export default function App() {
         let scheduled = false;
         for (let d of allowedDays) {
           for (let pId of allowedPeriods) {
-            const instBusy = newSessions.some(s => s.dayIndex === d && s.startHour === h && s.instructor === vs.instructor);
+            const instBusy = newSessions.some(s => s.dayIndex === d && s.periodId === pId && s.instructor === vs.instructor);
             if (instBusy) continue;
 
             for (let room of validRooms) {
