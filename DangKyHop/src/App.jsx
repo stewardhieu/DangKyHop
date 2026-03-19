@@ -8,6 +8,7 @@ import TableTab from './components/Tabs/TableTab';
 import DataTab from './components/Tabs/DataTab';
 import ImportModal from './components/Modals/ImportModal';
 import SessionModal from './components/Modals/SessionModal';
+import AutoScheduleModal from './components/Modals/AutoScheduleModal';
 
 export default function App() {
   const [history, setHistory] = useState([{ classes: MOCK_CLASSES, sessions: [], rooms: MOCK_ROOMS, instructors: MOCK_INSTRUCTORS }]);
@@ -218,7 +219,9 @@ export default function App() {
   };
 
   // --- AUTO-SCHEDULE ALGORITHM (BIN PACKING) ---
-  const executeAutoSchedule = () => {
+  const executeAutoSchedule = (config) => {
+    const { allowedDays, allowedHours, maxClassesPerSession } = config;
+
     if (sidebarSelection.length === 0) return;
     const classesToSchedule = classes.filter(c => sidebarSelection.includes(c.id));
     const sortedRooms = [...rooms].filter(r => r.id !== 'R_DEFAULT').sort((a, b) => b.capacity - a.capacity); 
@@ -247,7 +250,9 @@ export default function App() {
         let placed = false;
         for (let vs of virtualSessions) {
           if (vs.totalStudents + cls.students <= sortedRooms[0].capacity) {
-            vs.classes.push(cls); vs.totalStudents += cls.students; placed = true; break;
+            if (maxClassesPerSession === 0 || vs.classes.length < maxClassesPerSession) {
+              vs.classes.push(cls); vs.totalStudents += cls.students; placed = true; break;
+            }
           }
         }
         if (!placed) virtualSessions.push({ classes: [cls], totalStudents: cls.students, instructor: inst });
@@ -258,8 +263,8 @@ export default function App() {
         if (validRooms.length === 0) { failedToSchedule.push(...vs.classes.map(c => c.name)); return; }
 
         let scheduled = false;
-        for (let d = 0; d < DAYS.length; d++) {
-          for (let h of HOURS) {
+        for (let d of allowedDays) {
+          for (let h of allowedHours) {
             const instBusy = newSessions.some(s => s.dayIndex === d && s.startHour === h && s.instructor === vs.instructor);
             if (instBusy) continue;
 
@@ -279,9 +284,10 @@ export default function App() {
       });
     });
 
-    saveState(newClasses, newSessions);
+    saveState(newClasses, newSessions, newRooms);
     setSidebarSelection([]); 
     setIsMultiSelectMode(false);
+    setActiveModal(null);
     
     if (failedToSchedule.length > 0) {
       alert(`Phân bổ thành công: ${successCount} lớp.\nThất bại: ${failedToSchedule.length} lớp (Nguyên nhân: Hết quỹ phòng trống hoặc Kẹt lịch giảng viên).\nLớp thất bại: ${failedToSchedule.join(', ')}`);
@@ -289,7 +295,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900 font-sans p-4 flex flex-col">
+    <div className="h-screen bg-slate-100 text-slate-900 font-sans p-4 flex flex-col overflow-hidden">
       <Header classes={classes} rooms={rooms} historyIndex={historyIndex} historyLength={history.length} handleUndo={handleUndo} handleRedo={handleRedo} />
 
       <div className="flex bg-white border border-slate-200 rounded-t-lg shadow-sm overflow-x-auto custom-scrollbar mb-0">
@@ -309,6 +315,7 @@ export default function App() {
 
       <ImportModal isImportModalOpen={isImportModalOpen} setIsImportModalOpen={setIsImportModalOpen} mainTab={mainTab} pasteData={pasteData} setPasteData={setPasteData} processImport={processImport} />
       <SessionModal activeModal={activeModal} setActiveModal={setActiveModal} formData={formData} setFormData={setFormData} rooms={rooms} instructors={instructors} classes={classes} sessions={sessions} deleteSession={deleteSession} saveSession={saveSession} toggleClassSelection={toggleClassSelection} />
+      <AutoScheduleModal activeModal={activeModal} setActiveModal={setActiveModal} executeAutoSchedule={executeAutoSchedule} sidebarSelectionCount={sidebarSelection.length} />
       <style dangerouslySetInnerHTML={{__html: `
         .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }

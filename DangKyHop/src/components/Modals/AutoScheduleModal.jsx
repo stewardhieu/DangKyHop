@@ -1,0 +1,80 @@
+import React, { useState } from 'react';
+import { X, Wand2 } from 'lucide-react';
+import { DAYS, HOURS } from '../../constants/data';
+
+export default function AutoScheduleModal({ activeModal, setActiveModal, executeAutoSchedule, sidebarSelectionCount }) {
+  if (activeModal?.type !== 'auto_schedule') return null;
+
+  const [config, setConfig] = useState({
+    allowedDays: [0, 1, 2, 3, 4, 5, 6],
+    allowedHours: HOURS,
+    maxClassesPerSession: 0
+  });
+
+  const toggleDay = (dayIdx) => {
+    setConfig(prev => ({
+      ...prev,
+      allowedDays: prev.allowedDays.includes(dayIdx) ? prev.allowedDays.filter(d => d !== dayIdx) : [...prev.allowedDays, dayIdx].sort()
+    }));
+  };
+
+  const handleRun = () => {
+    if (config.allowedDays.length === 0 || config.allowedHours.length === 0) {
+      alert("Vui lòng chọn khung thời gian (ngày, giờ) cho phép!"); return;
+    }
+    executeAutoSchedule(config);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 backdrop-blur-sm">
+      <div className="bg-white rounded-lg shadow-xl w-[500px] flex flex-col animate-in fade-in zoom-in-95 duration-200">
+        <div className="flex justify-between items-center p-4 border-b border-slate-200 bg-slate-50">
+          <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
+            <Wand2 className="text-blue-600" size={20} /> Cấu hình Phân bổ Nâng cao
+          </h3>
+          <button onClick={() => setActiveModal(null)} className="text-slate-400 border border-transparent hover:bg-slate-200 transition-colors p-1 rounded-md"><X size={20}/></button>
+        </div>
+        
+        <div className="p-5 space-y-6 flex-1">
+          <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg text-sm text-blue-800 flex gap-3 text-justify items-start">
+            <div>Đang chuẩn bị phân bổ tự động cho <span className="font-bold text-lg text-blue-900">{sidebarSelectionCount}</span> lớp học. Thuật toán sẽ tối ưu hóa phòng học tránh lãng phí diện tích, dựa theo các thuộc tính ràng buộc dưới đây:</div>
+          </div>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide text-xs">Phạm vi Ngày phân bổ</label>
+              <div className="flex gap-2 flex-wrap">
+                {DAYS.map((day, idx) => (
+                  <button 
+                    key={idx} onClick={() => toggleDay(idx)}
+                    className={`px-3 py-1.5 rounded border text-xs font-bold transition-all ${config.allowedDays.includes(idx) ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white text-slate-500 border-slate-300 hover:bg-slate-50'}`}
+                  >
+                    {day}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide text-xs">Số lượng lớp gộp tối đa</label>
+              <div className="flex items-center gap-3">
+                <input type="number" min="0" value={config.maxClassesPerSession} onChange={(e) => setConfig({...config, maxClassesPerSession: parseInt(e.target.value) || 0})} className="w-24 border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 font-semibold text-center" />
+                <span className="text-xs text-slate-500 flex-1">Nhập <span className="font-bold">0</span> nếu không muốn giới hạn (thuật toán sẽ nhồi nhét tối đa lớp có thể vào cùng một phòng nếu đủ sức chứa).</span>
+              </div>
+            </div>
+            
+            <div className="pt-4 border-t border-slate-100">
+              <label className="block text-sm font-bold text-slate-700 mb-1 uppercase tracking-wide text-xs">Khung giờ quy định</label>
+              <p className="text-xs text-slate-500 mb-2 font-medium">Auto-scheduler mặc định sẽ quét trong tất cả các khung giờ từ <span className="font-bold text-slate-700">8:00 đến 21:00</span> theo lịch của Giảng viên.</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3 rounded-b-lg">
+          <button onClick={() => setActiveModal(null)} className="px-5 py-2 text-sm font-medium border rounded-md hover:bg-white bg-slate-100 shadow-sm transition-colors text-slate-700">Hủy</button>
+          <button onClick={handleRun} className="px-6 py-2 text-sm font-bold text-white bg-blue-600 border border-blue-700 rounded-md hover:bg-blue-700 active:scale-95 flex items-center gap-2 shadow-sm transition-transform"><Wand2 size={16}/> Thực thi thuât toán</button>
+        </div>
+      </div>
+    </div>
+  );
+}

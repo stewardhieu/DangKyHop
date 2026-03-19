@@ -20,7 +20,8 @@ export default function VisualTab({
   executeAutoSchedule,
   openSessionModal,
   sidebarSearch,
-  setSidebarSearch
+  setSidebarSearch,
+  setActiveModal
 }) {
   const unassignedClasses = classes.filter(c => !c.isAssigned && (activeInstructorTab === TAB_ALL || c.instructor === activeInstructorTab) && (c.name.toLowerCase().includes(sidebarSearch.toLowerCase()) || c.instructor.toLowerCase().includes(sidebarSearch.toLowerCase())));
   const uniqueInstructorsForTab = [TAB_ALL, ...instructors];
@@ -47,15 +48,25 @@ export default function VisualTab({
             className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs focus:border-blue-500 transition-colors"
           />
           {isMultiSelectMode && (
-            <label className="flex items-center gap-2 text-sm text-slate-700 font-medium cursor-pointer hover:text-blue-700 transition-colors">
-              <input 
-                type="checkbox" 
-                checked={sidebarSelection.length === unassignedClasses.length && unassignedClasses.length > 0}
-                onChange={(e) => setSidebarSelection(e.target.checked ? unassignedClasses.map(c => c.id) : [])}
-                className="w-4 h-4 text-blue-600 rounded cursor-pointer"
-              />
-              Chọn tất cả lớp đang hiển thị ({unassignedClasses.length})
-            </label>
+            <div className="flex flex-col gap-2 mt-1">
+              <label className="flex items-center gap-2 text-sm text-slate-700 font-medium cursor-pointer hover:text-blue-700 transition-colors">
+                <input 
+                  type="checkbox" 
+                  checked={sidebarSelection.length === unassignedClasses.length && unassignedClasses.length > 0}
+                  onChange={(e) => setSidebarSelection(e.target.checked ? unassignedClasses.map(c => c.id) : [])}
+                  className="w-4 h-4 text-blue-600 rounded cursor-pointer"
+                />
+                Chọn tất cả lớp đang hiển thị ({unassignedClasses.length})
+              </label>
+              {sidebarSelection.length > 0 && (
+                <button 
+                  onClick={() => setActiveModal({ type: 'auto_schedule' })}
+                  className="w-full flex items-center justify-center gap-2 bg-amber-600 text-white px-3 py-2 rounded shadow-sm hover:bg-amber-700 transition-colors font-medium text-sm border border-amber-700"
+                >
+                  <Wand2 size={16} /> Phân bổ Tự động ({sidebarSelection.length})
+                </button>
+              )}
+            </div>
           )}
         </div>
         <div className="flex-1 overflow-y-auto p-2 space-y-2 bg-slate-50 custom-scrollbar relative">
@@ -105,16 +116,6 @@ export default function VisualTab({
             })
           }
         </div>
-        {isMultiSelectMode && sidebarSelection.length > 0 && (
-          <div className="p-3 border-t border-slate-200 bg-blue-50">
-            <button 
-              onClick={executeAutoSchedule}
-              className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded shadow-sm hover:bg-blue-700 transition-colors font-medium text-sm"
-            >
-              <Wand2 size={16} /> Tự động phân bổ ({sidebarSelection.length} lớp)
-            </button>
-          </div>
-        )}
       </aside>
 
       <main className="flex-1 bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col overflow-hidden">
@@ -136,8 +137,8 @@ export default function VisualTab({
 
             {HOURS.map(hour => (
               <div key={hour} className="flex border-b border-slate-200">
-                <div className="w-16 shrink-0 bg-slate-50 border-r border-slate-200 flex items-center justify-center text-xs font-medium text-slate-500 relative sticky left-0 z-10">
-                  <span className="absolute -top-2.5 bg-slate-50 px-1 w-full text-center">{`${hour}:00`}</span>
+                <div className="w-16 shrink-0 bg-slate-50 border-r border-slate-200 flex items-center justify-center text-xs font-bold text-slate-500 relative sticky left-0 z-10">
+                  <span className="px-1 text-center w-full">{`${hour}:00`}</span>
                 </div>
                 
                 {DAYS.map((_, dayIdx) => {
