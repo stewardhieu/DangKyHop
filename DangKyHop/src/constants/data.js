@@ -15,5 +15,8 @@ export const PERIODS = [
   { id: 9, name: 'Tiết 9', time: '14h50\' - 15h40\'', session: 'Chiều' },
   { id: 10, name: 'Tiết 10', time: '15h45\' - 16h35\'', session: 'Chiều' },
   { id: 11, name: 'Tiết 11', time: '16h40\' - 17h30\'', session: 'Chiều' },
-  { id: 12, name: 'Tiết 12', time: '17h35\' - 18h25\'', session: 'Chiều' }
+  { id: 12, name: 'Tiết 12', time: '17h35\' - 18h25\'', session: 'Chiều' },
+  { id: 13, name: 'Tiết 13', time: '18h30\' - 19h20\'', session: 'Tối' },
+  { id: 14, name: 'Tiết 14', time: '19h25\' - 20h15\'', session: 'Tối' },
+  { id: 15, name: 'Tiết 15', time: '20h20\' - 21h10\'', session: 'Tối' }
 ];

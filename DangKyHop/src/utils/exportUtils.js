@@ -17,13 +17,13 @@ export const exportToImage = async (elementId, filename = 'ThoiKhoaBieu') => {
         const elements = clonedDoc.querySelectorAll('*');
         elements.forEach(el => {
           const style = window.getComputedStyle(el);
-          if (style.backgroundColor && style.backgroundColor.includes('oklch')) {
+          if (style.backgroundColor && (style.backgroundColor.includes('oklch') || style.backgroundColor.includes('oklab'))) {
              el.style.backgroundColor = 'transparent';
           }
-          if (style.color && style.color.includes('oklch')) {
+          if (style.color && (style.color.includes('oklch') || style.color.includes('oklab'))) {
              el.style.color = '#000000';
           }
-          if (style.borderColor && style.borderColor.includes('oklch')) {
+          if (style.borderColor && (style.borderColor.includes('oklch') || style.borderColor.includes('oklab'))) {
              el.style.borderColor = '#cccccc';
           }
         });
@@ -56,13 +56,13 @@ export const exportToPDF = async (elementId, filename = 'ThoiKhoaBieu') => {
         const elements = clonedDoc.querySelectorAll('*');
         elements.forEach(el => {
           const style = window.getComputedStyle(el);
-          if (style.backgroundColor && style.backgroundColor.includes('oklch')) {
+          if (style.backgroundColor && (style.backgroundColor.includes('oklch') || style.backgroundColor.includes('oklab'))) {
              el.style.backgroundColor = 'transparent';
           }
-          if (style.color && style.color.includes('oklch')) {
+          if (style.color && (style.color.includes('oklch') || style.color.includes('oklab'))) {
              el.style.color = '#000000';
           }
-          if (style.borderColor && style.borderColor.includes('oklch')) {
+          if (style.borderColor && (style.borderColor.includes('oklch') || style.borderColor.includes('oklab'))) {
              el.style.borderColor = '#cccccc';
           }
         });
