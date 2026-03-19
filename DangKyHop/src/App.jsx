@@ -66,7 +66,7 @@ export default function App() {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   // DATA TAB States
-  const [newClassData, setNewClassData] = useState({ name: '', students: '', major: '', instructor: '', description: '' });
+  const [newClassData, setNewClassData] = useState({ name: '', students: '', major: '', instructor: '', description: '', cohort: '', extra1: '', extra2: '', extra3: '' });
   const [newRoomData, setNewRoomData] = useState({ name: '', capacity: '' });
   const [lastSelectedDataId, setLastSelectedDataId] = useState(null);
   const [isExporting, setIsExporting] = useState(false);
