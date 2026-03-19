@@ -242,7 +242,7 @@ export default function VisualTab({
                                 <div className="text-[10px] font-semibold text-blue-700 bg-blue-100 px-1 rounded whitespace-nowrap">{session.totalStudents} SV</div>
                               </div>
                               <div className="text-[10px] font-medium text-amber-700 truncate bg-amber-50 px-1 w-fit rounded my-0.5 max-w-full" title={session.instructor}>{session.instructor}</div>
-                              <div className="text-[10px] text-slate-600 truncate border-t border-blue-200/70 mt-1 pt-1 w-full block" title={fullString}>
+                              <div className="text-[10px] text-slate-600 break-words border-t border-blue-200/70 mt-1 pt-1 w-full block" title={fullString}>
                                 {fullString}
                               </div>
                             </div>
