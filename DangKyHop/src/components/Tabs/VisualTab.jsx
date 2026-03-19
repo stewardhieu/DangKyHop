@@ -161,7 +161,7 @@ export default function VisualTab({
         </div>
       </aside>
 
-      <main className="flex-1 bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col overflow-hidden">
+      <main className="flex-1 bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col overflow-hidden" id="visual-grid-container">
         <div className="p-2.5 border-b border-slate-200 bg-slate-50 flex items-center gap-4 justify-between">
           <div className="flex gap-2 overflow-x-auto custom-scrollbar">
             {uniqueInstructorsForTab.map(inst => (

@@ -58,6 +58,7 @@ export default function App() {
   const [roomFilter, setRoomFilter] = useState('');
   const [tableSearch, setTableSearch] = useState('');
   const [sidebarSearch, setSidebarSearch] = useState('');
+  const [selectedTableRows, setSelectedTableRows] = useState([]);
   const [activeInstructorTab, setActiveInstructorTab] = useState(TAB_ALL);
   const [sidebarSelection, setSidebarSelection] = useState([]);
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
@@ -259,9 +260,9 @@ export default function App() {
     if (activeModal.existingSessionId) {
       const oldSession = newSessions.find(s => s.id === activeModal.existingSessionId);
       oldSession.classIds.forEach(cid => { const c = newClasses.find(nc => nc.id === cid); if(c) c.isAssigned = false; });
-      newSessions = newSessions.map(s => s.id === activeModal.existingSessionId ? { ...s, roomName: finalRoomName, instructor: formData.instructor, classIds: formData.selectedClassIds, totalStudents: currentStudents, dayIndex: formData.dayIndex, periodId: formData.periodId } : s);
+      newSessions = newSessions.map(s => s.id === activeModal.existingSessionId ? { ...s, roomName: finalRoomName, instructor: formData.instructor, classIds: formData.selectedClassIds, totalStudents: currentStudents, dayIndex: formData.dayIndex, periodId: formData.periodId, date: format(addDays(currentWeekStart, formData.dayIndex), 'yyyy-MM-dd') } : s);
     } else {
-      newSessions.push({ id: `S_${Date.now()}`, dayIndex: formData.dayIndex, periodId: formData.periodId, duration: 1, roomName: finalRoomName, instructor: formData.instructor, classIds: formData.selectedClassIds, totalStudents: currentStudents });
+      newSessions.push({ id: `S_${Date.now()}`, dayIndex: formData.dayIndex, periodId: formData.periodId, date: format(addDays(currentWeekStart, formData.dayIndex), 'yyyy-MM-dd'), duration: 1, roomName: finalRoomName, instructor: formData.instructor, classIds: formData.selectedClassIds, totalStudents: currentStudents });
     }
     
     formData.selectedClassIds.forEach(cid => { const c = newClasses.find(nc => nc.id === cid); if(c) c.isAssigned = true; });
@@ -317,12 +318,13 @@ export default function App() {
             return s;
           }).filter(s => s.classIds.length > 0);
         } else {
+          const newDate = format(addDays(currentWeekStart, dayIndex), 'yyyy-MM-dd');
           if (session.classIds.length > 1) {
-             const newSession = { ...session, id: `S_${Date.now()}`, dayIndex, periodId, roomName, classIds: [classId], totalStudents: stCount };
+             const newSession = { ...session, id: `S_${Date.now()}`, dayIndex, periodId, roomName, date: newDate, classIds: [classId], totalStudents: stCount };
              newSessions = sessions.map(s => s.id === session.id ? { ...s, classIds: s.classIds.filter(id=>id!==classId), totalStudents: s.totalStudents - stCount } : s);
              newSessions.push(newSession);
           } else {
-            newSessions = sessions.map(s => s.id === session.id ? { ...s, dayIndex, periodId, roomName } : s);
+            newSessions = sessions.map(s => s.id === session.id ? { ...s, dayIndex, periodId, roomName, date: newDate } : s);
           }
         }
         saveState(classes, newSessions);
@@ -381,9 +383,9 @@ export default function App() {
             if (instBusy) continue;
 
             for (let room of validRooms) {
-              const roomBusy = newSessions.some(s => s.dayIndex === d && s.startHour === h && s.roomName === room.name);
+              const roomBusy = newSessions.some(s => s.dayIndex === d && s.periodId === pId && s.roomName === room.name);
               if (!roomBusy) {
-                newSessions.push({ id: `S_AUTO_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`, dayIndex: d, startHour: h, duration: 1, roomName: room.name, instructor: vs.instructor, classIds: vs.classes.map(c => c.id), totalStudents: vs.totalStudents });
+                newSessions.push({ id: `S_AUTO_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`, dayIndex: d, periodId: pId, date: format(addDays(currentWeekStart, d), 'yyyy-MM-dd'), duration: 1, roomName: room.name, instructor: vs.instructor, classIds: vs.classes.map(c => c.id), totalStudents: vs.totalStudents });
                 vs.classes.forEach(c => { const target = newClasses.find(nc => nc.id === c.id); if (target) target.isAssigned = true; });
                 scheduled = true; successCount += vs.classes.length; break;
               }
@@ -418,7 +420,7 @@ export default function App() {
 
   return (
     <div className="h-screen bg-slate-100 text-slate-900 font-sans p-4 flex flex-col overflow-hidden">
-      <Header classes={classes} rooms={rooms} historyIndex={historyIndex} historyLength={history.length} handleUndo={handleUndo} handleRedo={handleRedo} onOpenLogin={() => setIsLoginModalOpen(true)} />
+      <Header classes={classes} rooms={rooms} historyIndex={historyIndex} historyLength={history.length} handleUndo={handleUndo} handleRedo={handleRedo} onOpenLogin={() => setIsLoginModalOpen(true)} mainTab={mainTab} />
 
       <div className="flex bg-white border border-slate-200 rounded-t-lg shadow-sm overflow-x-auto custom-scrollbar mb-0 items-center justify-between">
         <div className="flex">
@@ -447,7 +449,7 @@ export default function App() {
 
       <div className="flex flex-1 overflow-hidden shadow-sm bg-white rounded-b-lg border-x border-b border-slate-200">
         {mainTab === 'VISUAL' && <VisualTab currentWeekStart={currentWeekStart} classes={classes} sessions={sessions} instructors={instructors} activeInstructorTab={activeInstructorTab} setActiveInstructorTab={setActiveInstructorTab} roomFilter={roomFilter} setRoomFilter={setRoomFilter} sidebarSelection={sidebarSelection} setSidebarSelection={setSidebarSelection} isMultiSelectMode={isMultiSelectMode} setIsMultiSelectMode={setIsMultiSelectMode} handleDragStartClass={handleDragStartClass} handleDragStartSession={handleDragStartSession} handleDropOnGrid={handleDropOnGrid} executeAutoSchedule={executeAutoSchedule} openSessionModal={openSessionModal} sidebarSearch={sidebarSearch} setSidebarSearch={setSidebarSearch} setActiveModal={setActiveModal} />}
-        {mainTab === 'TABLE' && <TableTab classes={classes} sessions={sessions} tableSearch={tableSearch} setTableSearch={setTableSearch} sortConfig={sortConfig} requestSort={requestSort} applySort={applySort} rooms={rooms} updateClassSessionInline={updateClassSessionInline} />}
+        {mainTab === 'TABLE' && <TableTab classes={classes} sessions={sessions} tableSearch={tableSearch} setTableSearch={setTableSearch} sortConfig={sortConfig} requestSort={requestSort} applySort={applySort} rooms={rooms} updateClassSessionInline={updateClassSessionInline} selectedTableRows={selectedTableRows} setSelectedTableRows={setSelectedTableRows} handleBulkTableAction={handleBulkTableAction} />}
         {(mainTab === 'DATA_CLASS' || mainTab === 'DATA_ROOM' || mainTab === 'DATA_INSTRUCTOR') && <DataTab type={mainTab} classes={classes} rooms={rooms} instructors={instructors} sessions={sessions} selectedRows={selectedRows} editingId={editingId} editFormData={editFormData} sortConfig={sortConfig} requestSort={requestSort} applySort={applySort} handleSelectRow={handleSelectRow} handleSelectAll={handleSelectAll} handleBulkDelete={handleBulkDelete} newClassData={newClassData} setNewClassData={setNewClassData} handleAddClassInline={handleAddClassInline} newRoomData={newRoomData} setNewRoomData={setNewRoomData} handleAddRoomInline={handleAddRoomInline} newInstructorName={newInstructorName} setNewInstructorName={setNewInstructorName} handleAddInstructorInline={handleAddInstructorInline} setEditFormData={setEditFormData} saveInlineEdit={saveInlineEdit} setEditingId={setEditingId} startInlineEdit={startInlineEdit} deleteSingle={deleteSingle} setIsImportModalOpen={setIsImportModalOpen} />}
       </div>
 

@@ -1,7 +1,8 @@
 import React from 'react';
-import { Filter, ArrowUpDown } from 'lucide-react';
+import { Filter, ArrowUpDown, Trash2, CalendarX2 } from 'lucide-react';
 import { DAYS, PERIODS } from '../../constants/data';
 import { useAuth } from '../../contexts/AuthContext';
+import { format } from 'date-fns';
 
 export default function TableTab({
   classes,
@@ -12,14 +13,29 @@ export default function TableTab({
   requestSort,
   applySort,
   rooms,
-  updateClassSessionInline
+  updateClassSessionInline,
+  selectedTableRows,
+  setSelectedTableRows,
+  handleBulkTableAction
 }) {
   const { currentUser } = useAuth();
   
+  const handleSelectRow = (id) => setSelectedTableRows(prev => prev.includes(id) ? prev.filter(r => r !== id) : [...prev, id]);
+  const handleSelectAll = (allIds, checked) => setSelectedTableRows(checked ? allIds : []);
+  
   return (
-    <div className="flex-1 bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col overflow-hidden p-4">
+    <div className="flex-1 bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col overflow-hidden p-4" id="table-container">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-bold text-slate-700">Bộ lọc nâng cao (Trạng thái phân bổ)</h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-lg font-bold text-slate-700">Bộ lọc nâng cao (Trạng thái phân bổ)</h2>
+          {currentUser && selectedTableRows.length > 0 && (
+            <div className="flex gap-2 ml-4">
+              <button onClick={() => handleBulkTableAction('UNASSIGNED')} className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-600 hover:bg-amber-100 border border-amber-200 rounded text-sm font-medium transition-colors">
+                <CalendarX2 size={16} /> Hủy phân bổ ({selectedTableRows.length})
+              </button>
+            </div>
+          )}
+        </div>
         <div className="relative">
           <Filter size={16} className="absolute left-2.5 top-2.5 text-slate-400" />
           <input 
@@ -35,6 +51,19 @@ export default function TableTab({
         <table className="w-full text-sm text-left">
           <thead className="bg-slate-50 sticky top-0 text-slate-700 border-b border-slate-200 shadow-sm z-10">
             <tr>
+              <th className="px-4 py-3 w-10">
+                 {currentUser && (
+                    <input 
+                      type="checkbox" 
+                      onChange={(e) => {
+                        const allIds = applySort(classes.filter(c => c.name.toLowerCase().includes(tableSearch.toLowerCase()) || c.instructor.toLowerCase().includes(tableSearch.toLowerCase()))).map(c=>c.id);
+                        handleSelectAll(allIds, e.target.checked);
+                      }} 
+                      checked={selectedTableRows.length > 0 && selectedTableRows.length === applySort(classes.filter(c => c.name.toLowerCase().includes(tableSearch.toLowerCase()) || c.instructor.toLowerCase().includes(tableSearch.toLowerCase()))).length}
+                      className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300" 
+                    />
+                 )}
+              </th>
               {[
                 { label: 'Tên Lớp', key: 'name' }, { label: 'Sĩ số', key: 'students' }, 
                 { label: 'Giảng viên', key: 'instructor' }, { label: 'Trạng thái', key: 'isAssigned' }, 
@@ -59,11 +88,16 @@ export default function TableTab({
                   ...cls, 
                   sessionObj: session,
                   roomName: session ? session.roomName : '', 
-                  sessionText: session ? `${DAYS[session.dayIndex]}, ${PERIODS.find(p=>p.id===session.periodId)?.name}` : '-' 
+                  sessionText: session ? `${session.date ? format(new Date(session.date), 'dd/MM/yyyy') : DAYS[session.dayIndex]} - ${PERIODS.find(p=>p.id===session.periodId)?.name}` : '-' 
                 };
               })
             ).map(cls => (
-              <tr key={cls.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+              <tr key={cls.id} className={`border-b border-slate-100 transition-colors ${selectedTableRows.includes(cls.id) ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-slate-50'}`}>
+                <td className="px-4 py-3">
+                  {currentUser && (
+                    <input type="checkbox" checked={selectedTableRows.includes(cls.id)} onChange={() => handleSelectRow(cls.id)} className="w-4 h-4 text-blue-600 rounded border-gray-300" />
+                  )}
+                </td>
                 <td className="px-4 py-3 font-medium text-slate-800">{cls.name}</td>
                 <td className="px-4 py-3 text-slate-600">{cls.students}</td>
                 <td className="px-4 py-3 text-slate-600">{cls.instructor}</td>

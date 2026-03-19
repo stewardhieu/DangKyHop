@@ -1,6 +1,7 @@
-import React from 'react';
-import { Undo2, Redo2, LogIn, LogOut } from 'lucide-react';
+import React, { useState } from 'react';
+import { Undo2, Redo2, LogIn, LogOut, Download, Image as ImageIcon, FileText } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { exportToImage, exportToPDF } from '../utils/exportUtils';
 
 export default function Header({
   classes,
@@ -9,9 +10,24 @@ export default function Header({
   historyLength,
   handleUndo,
   handleRedo,
-  onOpenLogin
+  onOpenLogin,
+  mainTab
 }) {
   const { currentUser, logout } = useAuth();
+  const [showExportMenu, setShowExportMenu] = useState(false);
+
+  const handleExport = (format) => {
+    setShowExportMenu(false);
+    const targetId = mainTab === 'VISUAL' ? 'visual-grid-container' : 'table-container';
+    const filename = `ThoiKhoaBieu_${mainTab}_${new Date().getTime()}`;
+    
+    // Slight delay to allow UI to close dropdown before capture
+    setTimeout(() => {
+      if (format === 'PNG') exportToImage(targetId, filename);
+      else if (format === 'PDF') exportToPDF(targetId, filename);
+    }, 100);
+  };
+
   return (
     <header className="bg-white border border-slate-200 shadow-sm rounded-lg p-4 mb-4 flex justify-between items-center relative z-10 transition-shadow hover:shadow-md">
       <div>
@@ -40,7 +56,24 @@ export default function Header({
           </div>
         )}
 
-        <div className="flex gap-2">
+        <div className="relative">
+          <button onClick={() => setShowExportMenu(!showExportMenu)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 shadow-sm rounded border border-slate-300 transition-colors">
+            <Download size={14} /> Xuất TKB <span className="text-[10px] ml-1">{showExportMenu ? '▲' : '▼'}</span>
+          </button>
+          
+          {showExportMenu && (
+            <div className="absolute right-0 top-full mt-1 w-40 bg-white rounded-md shadow-lg border border-slate-200 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+              <button onClick={() => handleExport('PNG')} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 text-left transition-colors border-b border-slate-100">
+                <ImageIcon size={16} /> Ra Ảnh (PNG)
+              </button>
+              <button onClick={() => handleExport('PDF')} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-red-50 hover:text-red-700 text-left transition-colors">
+                <FileText size={16} /> Ra File (PDF)
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="flex gap-2 border-l border-slate-200 pl-4">
           <button onClick={handleUndo} disabled={historyIndex === 0 || !currentUser} className="p-2 border border-slate-200 rounded hover:bg-slate-100 disabled:opacity-50 transition-colors" title="Hoàn tác (Undo)">
             <Undo2 size={18} />
           </button>
