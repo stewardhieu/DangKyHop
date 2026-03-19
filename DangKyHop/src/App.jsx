@@ -284,7 +284,7 @@ export default function App() {
       });
     });
 
-    saveState(newClasses, newSessions, newRooms);
+    saveState(newClasses, newSessions);
     setSidebarSelection([]); 
     setIsMultiSelectMode(false);
     setActiveModal(null);

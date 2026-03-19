@@ -18,6 +18,13 @@ export default function AutoScheduleModal({ activeModal, setActiveModal, execute
     }));
   };
 
+  const toggleHour = (hour) => {
+    setConfig(prev => ({
+      ...prev,
+      allowedHours: prev.allowedHours.includes(hour) ? prev.allowedHours.filter(h => h !== hour) : [...prev.allowedHours, hour].sort((a, b) => a - b)
+    }));
+  };
+
   const handleRun = () => {
     if (config.allowedDays.length === 0 || config.allowedHours.length === 0) {
       alert("Vui lòng chọn khung thời gian (ngày, giờ) cho phép!"); return;
@@ -64,8 +71,23 @@ export default function AutoScheduleModal({ activeModal, setActiveModal, execute
             </div>
             
             <div className="pt-4 border-t border-slate-100">
-              <label className="block text-sm font-bold text-slate-700 mb-1 uppercase tracking-wide text-xs">Khung giờ quy định</label>
-              <p className="text-xs text-slate-500 mb-2 font-medium">Auto-scheduler mặc định sẽ quét trong tất cả các khung giờ từ <span className="font-bold text-slate-700">8:00 đến 21:00</span> theo lịch của Giảng viên.</p>
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-sm font-bold text-slate-700 uppercase tracking-wide text-xs">Khung giờ quy định</label>
+                <div className="flex gap-2">
+                  <button onClick={() => setConfig({...config, allowedHours: HOURS})} className="text-[10px] bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded text-slate-600 font-semibold transition-colors">Chọn tất cả</button>
+                  <button onClick={() => setConfig({...config, allowedHours: []})} className="text-[10px] bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded text-slate-600 font-semibold transition-colors">Bỏ chọn</button>
+                </div>
+              </div>
+              <div className="flex gap-1.5 flex-wrap">
+                {HOURS.map(hour => (
+                  <button 
+                    key={hour} onClick={() => toggleHour(hour)}
+                    className={`px-2 py-1 rounded border text-[11px] font-bold transition-all ${config.allowedHours.includes(hour) ? 'bg-amber-500 text-white border-amber-600 shadow-sm' : 'bg-white text-slate-500 border-slate-300 hover:bg-slate-50'}`}
+                  >
+                    {hour}:00
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
