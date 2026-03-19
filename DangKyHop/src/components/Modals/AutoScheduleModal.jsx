@@ -80,7 +80,21 @@ export default function AutoScheduleModal({ activeModal, setActiveModal, execute
               <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide text-xs">Số lượng lớp gộp tối đa</label>
               <div className="flex items-center gap-3">
                 <input type="number" min="0" value={config.maxClassesPerSession} onChange={(e) => setConfig({...config, maxClassesPerSession: parseInt(e.target.value) || 0})} className="w-24 border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 font-semibold text-center" />
-                <span className="text-xs text-slate-500 flex-1">Nhập <span className="font-bold">0</span> nếu không muốn giới hạn (thuật toán sẽ nhồi nhét tối đa lớp có thể vào cùng một phòng nếu đủ sức chứa).</span>
+                <span className="text-xs text-slate-500 flex-1">Nhập <span className="font-bold">0</span> nếu không muốn giới hạn.</span>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-1.5 uppercase tracking-wide text-xs">Ràng buộc gộp nâng cao</label>
+              <div className="space-y-2 bg-slate-50 p-2.5 rounded-md border border-slate-200">
+                <label className="flex items-center gap-2 cursor-pointer text-sm text-slate-700 font-medium">
+                  <input type="checkbox" checked={config.mergeByMajor || false} onChange={(e) => setConfig({...config, mergeByMajor: e.target.checked})} className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer" />
+                  <span>Chỉ gộp các lớp có <strong className="text-blue-700">Cùng Ngành học</strong></span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer text-sm text-slate-700 font-medium">
+                  <input type="checkbox" checked={config.mergeByCohort || false} onChange={(e) => setConfig({...config, mergeByCohort: e.target.checked})} className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer" />
+                  <span>Chỉ gộp các lớp có <strong className="text-blue-700">Cùng Khoá học</strong></span>
+                </label>
               </div>
             </div>
             

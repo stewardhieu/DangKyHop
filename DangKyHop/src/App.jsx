@@ -416,8 +416,13 @@ export default function App() {
         let placed = false;
         for (let vs of virtualSessions) {
           if (vs.totalStudents + cls.students <= sortedRooms[0].capacity) {
-            if (maxClassesPerSession === 0 || vs.classes.length < maxClassesPerSession) {
-              vs.classes.push(cls); vs.totalStudents += cls.students; placed = true; break;
+            const matchMajor = !config.mergeByMajor || vs.classes.every(vc => vc.major === cls.major);
+            const matchCohort = !config.mergeByCohort || vs.classes.every(vc => vc.cohort === cls.cohort);
+            
+            if (matchMajor && matchCohort) {
+              if (maxClassesPerSession === 0 || vs.classes.length < maxClassesPerSession) {
+                vs.classes.push(cls); vs.totalStudents += cls.students; placed = true; break;
+              }
             }
           }
         }
