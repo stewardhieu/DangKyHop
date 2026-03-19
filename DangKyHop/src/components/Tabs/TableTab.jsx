@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Filter, ArrowUpDown, Trash2, CalendarX2 } from 'lucide-react';
 import { DAYS, PERIODS } from '../../constants/data';
 import { useAuth } from '../../contexts/AuthContext';
@@ -22,6 +22,40 @@ export default function TableTab({
   
   const handleSelectRow = (id) => setSelectedTableRows(prev => prev.includes(id) ? prev.filter(r => r !== id) : [...prev, id]);
   const handleSelectAll = (allIds, checked) => setSelectedTableRows(checked ? allIds : []);
+
+  const [columnFilters, setColumnFilters] = useState({
+    name: '', students: '', instructor: '', isAssigned: '', roomName: '', sessionText: ''
+  });
+
+  const handleFilterChange = (key, value) => {
+    setColumnFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  const filteredItems = applySort(
+    classes.map(cls => {
+      const session = sessions.find(s => s.classIds.includes(cls.id));
+      return { 
+        ...cls, 
+        sessionObj: session,
+        roomName: session ? session.roomName : '', 
+        sessionText: session ? `${session.date ? format(new Date(session.date), 'dd/MM/yyyy') : DAYS[session.dayIndex]} - ${PERIODS.find(p=>p.id===session.periodId)?.name}` : '-' 
+      };
+    }).filter(cls => {
+      const matchesSearch = cls.name.toLowerCase().includes(tableSearch.toLowerCase()) || cls.instructor.toLowerCase().includes(tableSearch.toLowerCase());
+      const matchesName = cls.name.toLowerCase().includes(columnFilters.name.toLowerCase());
+      const matchesStudents = !columnFilters.students || cls.students.toString().includes(columnFilters.students);
+      const matchesInstructor = cls.instructor.toLowerCase().includes(columnFilters.instructor.toLowerCase());
+      
+      let matchesStatus = true;
+      if (columnFilters.isAssigned === 'YES') matchesStatus = cls.isAssigned;
+      else if (columnFilters.isAssigned === 'NO') matchesStatus = !cls.isAssigned;
+
+      const matchesRoom = cls.roomName.toLowerCase().includes(columnFilters.roomName.toLowerCase());
+      const matchesTime = cls.sessionText.toLowerCase().includes(columnFilters.sessionText.toLowerCase());
+
+      return matchesSearch && matchesName && matchesStudents && matchesInstructor && matchesStatus && matchesRoom && matchesTime;
+    })
+  );
   
   return (
     <div className="flex-1 bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col overflow-hidden p-4" id="table-container">
@@ -56,10 +90,10 @@ export default function TableTab({
                     <input 
                       type="checkbox" 
                       onChange={(e) => {
-                        const allIds = applySort(classes.filter(c => c.name.toLowerCase().includes(tableSearch.toLowerCase()) || c.instructor.toLowerCase().includes(tableSearch.toLowerCase()))).map(c=>c.id);
+                        const allIds = filteredItems.map(c => c.id);
                         handleSelectAll(allIds, e.target.checked);
                       }} 
-                      checked={selectedTableRows.length > 0 && selectedTableRows.length === applySort(classes.filter(c => c.name.toLowerCase().includes(tableSearch.toLowerCase()) || c.instructor.toLowerCase().includes(tableSearch.toLowerCase()))).length}
+                      checked={selectedTableRows.length > 0 && selectedTableRows.length === filteredItems.length}
                       className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300" 
                     />
                  )}
@@ -78,20 +112,24 @@ export default function TableTab({
               ))}
               <th className="px-4 py-3 font-semibold">Thời gian (Ca họp)</th>
             </tr>
+            <tr className="bg-slate-50/50 border-b border-slate-200">
+              <th className="px-4 py-2"></th>
+              <th className="px-2 py-1"><input type="text" placeholder="Lọc Tên..." value={columnFilters.name} onChange={e => handleFilterChange('name', e.target.value)} className="w-full border border-slate-200 rounded px-1.5 py-1 text-xs font-normal focus:border-blue-500 outline-none" /></th>
+              <th className="px-2 py-1"><input type="text" placeholder="Sĩ số..." value={columnFilters.students} onChange={e => handleFilterChange('students', e.target.value)} className="w-full border border-slate-200 rounded px-1.5 py-1 text-xs font-normal focus:border-blue-500 outline-none" /></th>
+              <th className="px-2 py-1"><input type="text" placeholder="Lọc GV..." value={columnFilters.instructor} onChange={e => handleFilterChange('instructor', e.target.value)} className="w-full border border-slate-200 rounded px-1.5 py-1 text-xs font-normal focus:border-blue-500 outline-none" /></th>
+              <th className="px-2 py-1">
+                <select value={columnFilters.isAssigned} onChange={e => handleFilterChange('isAssigned', e.target.value)} className="w-full border border-slate-200 rounded px-1.5 py-1 text-xs font-normal focus:border-blue-500 bg-white outline-none">
+                  <option value="">Tất cả</option>
+                  <option value="YES">Đã xếp</option>
+                  <option value="NO">Chưa xếp</option>
+                </select>
+              </th>
+              <th className="px-2 py-1"><input type="text" placeholder="Lọc Phòng..." value={columnFilters.roomName} onChange={e => handleFilterChange('roomName', e.target.value)} className="w-full border border-slate-200 rounded px-1.5 py-1 text-xs font-normal focus:border-blue-500 outline-none" /></th>
+              <th className="px-2 py-1"><input type="text" placeholder="Lọc Thời gian..." value={columnFilters.sessionText} onChange={e => handleFilterChange('sessionText', e.target.value)} className="w-full border border-slate-200 rounded px-1.5 py-1 text-xs font-normal focus:border-blue-500 outline-none" /></th>
+            </tr>
           </thead>
           <tbody>
-            {applySort(
-              classes.filter(c => c.name.toLowerCase().includes(tableSearch.toLowerCase()) || c.instructor.toLowerCase().includes(tableSearch.toLowerCase()))
-              .map(cls => {
-                const session = sessions.find(s => s.classIds.includes(cls.id));
-                return { 
-                  ...cls, 
-                  sessionObj: session,
-                  roomName: session ? session.roomName : '', 
-                  sessionText: session ? `${session.date ? format(new Date(session.date), 'dd/MM/yyyy') : DAYS[session.dayIndex]} - ${PERIODS.find(p=>p.id===session.periodId)?.name}` : '-' 
-                };
-              })
-            ).map(cls => (
+            {filteredItems.map(cls => (
               <tr key={cls.id} className={`border-b border-slate-100 transition-colors ${selectedTableRows.includes(cls.id) ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-slate-50'}`}>
                 <td className="px-4 py-3">
                   {currentUser && (

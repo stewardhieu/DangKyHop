@@ -332,6 +332,24 @@ export default function App() {
     }
   };
 
+  const handleBulkTableAction = (action) => {
+    if (!currentUser || selectedTableRows.length === 0) return;
+    if (action === 'UNASSIGNED') {
+      if(!window.confirm(`Hủy phân bổ cho ${selectedTableRows.length} lớp đã chọn?`)) return;
+      
+      const newSessions = sessions.map(s => {
+        const remainingIds = s.classIds.filter(id => !selectedTableRows.includes(id));
+        const removedIds = s.classIds.filter(id => selectedTableRows.includes(id));
+        const removedStudents = removedIds.reduce((sum, id) => sum + parseInt(classes.find(c=>c.id===id)?.students || 0), 0);
+        return { ...s, classIds: remainingIds, totalStudents: s.totalStudents - removedStudents };
+      }).filter(s => s.classIds.length > 0);
+
+      const newClasses = classes.map(c => selectedTableRows.includes(c.id) ? { ...c, isAssigned: false } : c);
+      saveState(newClasses, newSessions);
+      setSelectedTableRows([]);
+    }
+  };
+
   // --- AUTO-SCHEDULE ALGORITHM (BIN PACKING) ---
   const executeAutoSchedule = (config) => {
     const { allowedDays, allowedPeriods, maxClassesPerSession } = config;
@@ -437,9 +455,24 @@ export default function App() {
             <button onClick={() => setCurrentWeekStart(subWeeks(currentWeekStart, 1))} className="p-1.5 hover:bg-slate-100 rounded text-slate-600 transition-colors">
               <ChevronLeft size={20} />
             </button>
-            <span className="text-sm font-bold text-slate-700 tracking-wide min-w-[200px] text-center">
-              Tuần bắt đầu: {format(currentWeekStart, 'dd/MM/yyyy')}
-            </span>
+            <div className="flex flex-col items-center">
+              <span className="text-sm font-bold text-slate-700 tracking-wide min-w-[200px] text-center">
+                Tuần bắt đầu: {format(currentWeekStart, 'dd/MM/yyyy')}
+              </span>
+              <input 
+                type="date" 
+                onChange={(e) => {
+                  if (e.target.value) {
+                    const selectedDate = new Date(e.target.value);
+                    // startOfWeek from date-fns
+                    import('date-fns').then(({ startOfWeek }) => {
+                       setCurrentWeekStart(startOfWeek(selectedDate, { weekStartsOn: 1 }));
+                    });
+                  }
+                }}
+                className="text-xs border border-slate-200 rounded px-1 py-0.5 mt-1 focus:outline-none focus:border-blue-500 text-slate-600 cursor-pointer shadow-sm"
+              />
+            </div>
             <button onClick={() => setCurrentWeekStart(addWeeks(currentWeekStart, 1))} className="p-1.5 hover:bg-slate-100 rounded text-slate-600 transition-colors">
               <ChevronRight size={20} />
             </button>
