@@ -197,11 +197,38 @@ export default function App() {
     if (!pasteData.trim()) return;
     const lines = pasteData.trim().split('\n').map(l => l.split('\t').map(c => c.trim()));
     if (mainTab === 'DATA_CLASS') {
-      const newCls = lines.map(cols => cols.length >= 2 ? { id: `C_IMP_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`, name: cols[0], students: parseInt(cols[1])||0, major: cols[2]||'', instructor: cols[3]||'', cohort: cols[4]||'', isAssigned: false } : null).filter(Boolean);
-      saveState([...classes, ...newCls], sessions);
+      const updatedClasses = [...classes];
+      lines.forEach(cols => {
+        if (cols.length < 2) return;
+        const name = cols[0];
+        const students = parseInt(cols[1]) || 0;
+        const major = cols[2] || '';
+        const instructor = cols[3] || '';
+        const cohort = cols[4] || '';
+        
+        const idx = updatedClasses.findIndex(c => c.name.toLowerCase() === name.toLowerCase());
+        if (idx !== -1) {
+          updatedClasses[idx] = { ...updatedClasses[idx], students: students || updatedClasses[idx].students, major: major || updatedClasses[idx].major, instructor: instructor || updatedClasses[idx].instructor, cohort: cohort || updatedClasses[idx].cohort };
+        } else {
+          updatedClasses.push({ id: `C_IMP_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`, name, students, major, instructor, cohort, isAssigned: false });
+        }
+      });
+      saveState(updatedClasses, sessions);
     } else if (mainTab === 'DATA_ROOM') {
-      const newRms = lines.map(cols => cols.length >= 2 ? { id: `R_IMP_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`, name: cols[0], capacity: parseInt(cols[1])||0 } : null).filter(Boolean);
-      saveState(classes, sessions, [...rooms, ...newRms]);
+      const updatedRooms = [...rooms];
+      lines.forEach(cols => {
+        if (cols.length < 2) return;
+        const name = cols[0];
+        const capacity = parseInt(cols[1]) || 0;
+        
+        const idx = updatedRooms.findIndex(r => r.name.toLowerCase() === name.toLowerCase());
+        if (idx !== -1) {
+          updatedRooms[idx] = { ...updatedRooms[idx], capacity: capacity || updatedRooms[idx].capacity };
+        } else {
+          updatedRooms.push({ id: `R_IMP_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`, name, capacity });
+        }
+      });
+      saveState(classes, sessions, updatedRooms);
     } else if (mainTab === 'DATA_INSTRUCTOR') {
       const newInsts = lines.map(cols => cols[0]).filter(Boolean);
       saveState(classes, sessions, rooms, [...new Set([...instructors, ...newInsts])]);
