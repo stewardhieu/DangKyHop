@@ -11,11 +11,11 @@ export default function Header({
   handleUndo,
   handleRedo,
   onOpenLogin,
-  mainTab
+  mainTab,
+  setIsExporting
 }) {
   const { currentUser, logout } = useAuth();
   const [showExportMenu, setShowExportMenu] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
 
   const handleExport = async (format) => {
     setShowExportMenu(false);
@@ -90,13 +90,6 @@ export default function Header({
           </button>
         </div>
       </div>
-      {isExporting && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9999] flex flex-col items-center justify-center text-white">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent mb-4"></div>
-          <div className="font-bold text-lg">Đang kết xuất báo cáo & Tối ưu trang...</div>
-          <p className="text-sm text-slate-300 mt-1">Hệ thống đang quét từng hàng cho định dạng A4. Vui lòng giữ trình duyệt mở.</p>
-        </div>
-      )}
     </header>
   );
 }

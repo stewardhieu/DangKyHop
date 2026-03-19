@@ -69,6 +69,7 @@ export default function App() {
   const [newClassData, setNewClassData] = useState({ name: '', students: '', major: '', instructor: '', description: '' });
   const [newRoomData, setNewRoomData] = useState({ name: '', capacity: '' });
   const [lastSelectedDataId, setLastSelectedDataId] = useState(null);
+  const [isExporting, setIsExporting] = useState(false);
   const [newInstructorName, setNewInstructorName] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [editFormData, setEditFormData] = useState({});
@@ -472,7 +473,7 @@ export default function App() {
 
   return (
     <div className="h-screen bg-slate-100 text-slate-900 font-sans p-4 flex flex-col overflow-hidden">
-      <Header classes={classes} rooms={rooms} historyIndex={historyIndex} historyLength={history.length} handleUndo={handleUndo} handleRedo={handleRedo} onOpenLogin={() => setIsLoginModalOpen(true)} mainTab={mainTab} />
+      <Header classes={classes} rooms={rooms} historyIndex={historyIndex} historyLength={history.length} handleUndo={handleUndo} handleRedo={handleRedo} onOpenLogin={() => setIsLoginModalOpen(true)} mainTab={mainTab} setIsExporting={setIsExporting} />
 
       <div className="flex bg-white border border-slate-200 rounded-t-lg shadow-sm overflow-x-auto custom-scrollbar mb-0 items-center justify-between">
         <div className="flex">
@@ -523,6 +524,16 @@ export default function App() {
       <ImportModal isImportModalOpen={isImportModalOpen} setIsImportModalOpen={setIsImportModalOpen} mainTab={mainTab} pasteData={pasteData} setPasteData={setPasteData} processImport={processImport} />
       <SessionModal activeModal={activeModal} setActiveModal={setActiveModal} formData={formData} setFormData={setFormData} rooms={rooms} instructors={instructors} classes={classes} sessions={sessions} deleteSession={deleteSession} saveSession={saveSession} toggleClassSelection={toggleClassSelection} />
       <AutoScheduleModal activeModal={activeModal} setActiveModal={setActiveModal} executeAutoSchedule={executeAutoSchedule} sidebarSelectionCount={sidebarSelection.length} currentWeekStart={currentWeekStart} />
+      
+      {isExporting && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[9999] flex items-center justify-center text-white animate-in fade-in">
+          <div className="bg-white p-6 rounded-lg shadow-xl flex flex-col items-center max-w-sm mx-auto border border-slate-200 animate-in zoom-in-95">
+            <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-600 border-t-transparent mb-3"></div>
+            <div className="font-bold text-base text-slate-800">Đang khởi tạo tệp báo cáo...</div>
+            <p className="text-xs text-slate-500 mt-1 text-center font-normal">Hệ thống đang quét hàng cho khung A4. Vui lòng giữ cửa sổ trình duyệt bật.</p>
+          </div>
+        </div>
+      )}
       <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
       <style dangerouslySetInnerHTML={{__html: `
         .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
