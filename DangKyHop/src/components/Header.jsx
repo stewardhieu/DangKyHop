@@ -14,18 +14,25 @@ export default function Header({
   mainTab
 }) {
   const { currentUser, logout } = useAuth();
-  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
-  const handleExport = (format) => {
+  const handleExport = async (format) => {
     setShowExportMenu(false);
+    setIsExporting(true);
     const targetId = mainTab === 'VISUAL' ? 'visual-grid-container' : 'table-container';
     const filename = `ThoiKhoaBieu_${mainTab}_${new Date().getTime()}`;
     
     // Slight delay to allow UI to close dropdown before capture
-    setTimeout(() => {
-      if (format === 'PNG') exportToImage(targetId, filename);
-      else if (format === 'PDF') exportToPDF(targetId, filename);
-    }, 100);
+    await new Promise(r => setTimeout(r, 150));
+
+    try {
+      if (format === 'PNG') await exportToImage(targetId, filename);
+      else if (format === 'PDF') await exportToPDF(targetId, filename);
+    } catch (error) {
+      console.error("Export Error:", error);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -82,6 +89,13 @@ export default function Header({
           </button>
         </div>
       </div>
+      {isExporting && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9999] flex flex-col items-center justify-center text-white">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent mb-4"></div>
+          <div className="font-bold text-lg">Đang kết xuất báo cáo & Tối ưu trang...</div>
+          <p className="text-sm text-slate-300 mt-1">Hệ thống đang quét từng hàng cho định dạng A4. Vui lòng giữ trình duyệt mở.</p>
+        </div>
+      )}
     </header>
   );
 }

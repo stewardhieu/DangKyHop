@@ -43,7 +43,17 @@ export default function DataTab({
     columns = [{ label: 'Họ và Tên', key: 'name' }]; 
   }
 
-  const data = applySort(rawData);
+  const [localFilters, setLocalFilters] = React.useState({});
+
+  const filteredData = rawData.filter(item => {
+    return Object.keys(localFilters).every(key => {
+      if (!localFilters[key]) return true;
+      const val = item[key];
+      return val && val.toString().toLowerCase().includes(localFilters[key].toLowerCase());
+    });
+  });
+
+  const data = applySort(filteredData);
   const allIds = data.map(d => d.id);
   const isAllSelected = selectedRows.length === data.length && data.length > 0;
 
@@ -78,6 +88,21 @@ export default function DataTab({
                 </th>
               ))}
               {currentUser && <th className="px-4 py-3 font-semibold w-24 text-center">Hành động</th>}
+            </tr>
+            <tr className="bg-slate-50 border-b border-slate-200">
+              <th className="px-3 py-2 text-center border-r border-slate-200"></th>
+              {columns.map((col, i) => (
+                <th key={i} className="px-2 py-1">
+                  <input 
+                    type="text" 
+                    placeholder={`Lọc ${col.label}...`} 
+                    value={localFilters[col.key] || ''} 
+                    onChange={(e) => setLocalFilters(prev => ({ ...prev, [col.key]: e.target.value }))}
+                    className="w-full border border-slate-200 rounded px-1.5 py-1 text-xs font-normal focus:border-blue-500 outline-none" 
+                  />
+                </th>
+              ))}
+              {currentUser && <th className="px-2 py-1"></th>}
             </tr>
           </thead>
           <tbody>
@@ -121,9 +146,17 @@ export default function DataTab({
               const isEditing = editingId === item.id;
               
               return (
-                <tr key={item.id || idx} className={`border-b border-slate-100 transition-colors ${isSelected ? 'bg-blue-50/50' : 'hover:bg-slate-50'} ${isEditing ? 'bg-amber-50 shadow-inner' : ''}`}>
+                <tr 
+                  key={item.id || idx} 
+                  className={`border-b border-slate-100 transition-colors ${isSelected ? 'bg-blue-50/50 hover:bg-blue-100' : 'hover:bg-slate-50 cursor-pointer'} ${isEditing ? 'bg-amber-50 shadow-inner' : ''}`}
+                  onClick={(e) => {
+                    if (currentUser && !isEditing && e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT' && e.target.tagName !== 'BUTTON') {
+                      handleSelectRow(item.id, e, data);
+                    }
+                  }}
+                >
                   <td className="px-3 py-2 text-center border-r border-slate-200">
-                    {currentUser && <input type="checkbox" checked={isSelected} onChange={() => handleSelectRow(item.id)} className="cursor-pointer w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />}
+                    {currentUser && <input type="checkbox" checked={isSelected} onChange={(e) => { e.stopPropagation(); handleSelectRow(item.id, e, data); }} className="cursor-pointer w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />}
                   </td>
                   
                   {isEditing ? (

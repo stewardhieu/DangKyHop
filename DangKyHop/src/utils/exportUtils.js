@@ -30,11 +30,12 @@ export const exportToImage = async (elementId, filename = 'ThoiKhoaBieu') => {
 
         const elements = clonedDoc.querySelectorAll('*');
         elements.forEach(el => {
-          if (el.className && typeof el.className === 'string' && el.className.includes('break-words')) {
+          if (el.className && typeof el.className === 'string' && (el.className.includes('break-words') || el.className.includes('truncate'))) {
              el.style.whiteSpace = 'normal';
              el.style.wordBreak = 'break-word';
              el.style.overflow = 'visible';
              el.style.height = 'auto';
+             el.style.maxWidth = 'none';
           }
 
           const style = window.getComputedStyle(el);
@@ -80,11 +81,12 @@ export const exportToPDF = async (elementId, filename = 'ThoiKhoaBieu') => {
       onclone: (clonedDoc) => {
         const elements = clonedDoc.querySelectorAll('*');
         elements.forEach(el => {
-          if (el.className && typeof el.className === 'string' && el.className.includes('break-words')) {
+          if (el.className && typeof el.className === 'string' && (el.className.includes('break-words') || el.className.includes('truncate'))) {
              el.style.whiteSpace = 'normal';
              el.style.wordBreak = 'break-word';
              el.style.overflow = 'visible';
              el.style.height = 'auto';
+             el.style.maxWidth = 'none';
           }
           const style = window.getComputedStyle(el);
           if (style.backgroundColor && (style.backgroundColor.includes('oklch') || style.backgroundColor.includes('oklab'))) {

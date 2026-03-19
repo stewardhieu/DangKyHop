@@ -19,8 +19,24 @@ export default function TableTab({
   handleBulkTableAction
 }) {
   const { currentUser } = useAuth();
+  const [lastSelectedRowId, setLastSelectedRowId] = useState(null);
   
-  const handleSelectRow = (id) => setSelectedTableRows(prev => prev.includes(id) ? prev.filter(r => r !== id) : [...prev, id]);
+  const handleSelectRow = (id, e) => {
+    if (e && e.shiftKey && lastSelectedRowId) {
+      const currentIndex = filteredItems.findIndex(c => c.id === id);
+      const lastIndex = filteredItems.findIndex(c => c.id === lastSelectedRowId);
+      if (currentIndex !== -1 && lastIndex !== -1) {
+        const start = Math.min(currentIndex, lastIndex);
+        const end = Math.max(currentIndex, lastIndex);
+        const rangeIds = filteredItems.slice(start, end + 1).map(c => c.id);
+        setSelectedTableRows(prev => [...new Set([...prev, ...rangeIds])]);
+        return;
+      }
+    }
+    setSelectedTableRows(prev => prev.includes(id) ? prev.filter(r => r !== id) : [...prev, id]);
+    setLastSelectedRowId(id);
+  };
+  
   const handleSelectAll = (allIds, checked) => setSelectedTableRows(checked ? allIds : []);
 
   const [columnFilters, setColumnFilters] = useState({
@@ -130,10 +146,18 @@ export default function TableTab({
           </thead>
           <tbody>
             {filteredItems.map(cls => (
-              <tr key={cls.id} className={`border-b border-slate-100 transition-colors ${selectedTableRows.includes(cls.id) ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-slate-50'}`}>
+              <tr 
+                key={cls.id} 
+                className={`border-b border-slate-100 transition-colors ${selectedTableRows.includes(cls.id) ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-slate-50 cursor-pointer'}`}
+                onClick={(e) => {
+                  if (currentUser && e.target.tagName !== 'SELECT' && e.target.tagName !== 'OPTION') {
+                    handleSelectRow(cls.id, e);
+                  }
+                }}
+              >
                 <td className="px-4 py-3">
                   {currentUser && (
-                    <input type="checkbox" checked={selectedTableRows.includes(cls.id)} onChange={() => handleSelectRow(cls.id)} className="w-4 h-4 text-blue-600 rounded border-gray-300" />
+                    <input type="checkbox" checked={selectedTableRows.includes(cls.id)} onChange={(e) => { e.stopPropagation(); handleSelectRow(cls.id, e); }} className="w-4 h-4 text-blue-600 rounded border-gray-300" />
                   )}
                 </td>
                 <td className="px-4 py-3 font-medium text-slate-800">{cls.name}</td>

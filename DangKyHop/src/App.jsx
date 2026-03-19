@@ -68,6 +68,7 @@ export default function App() {
   // DATA TAB States
   const [newClassData, setNewClassData] = useState({ name: '', students: '', major: '', instructor: '', description: '' });
   const [newRoomData, setNewRoomData] = useState({ name: '', capacity: '' });
+  const [lastSelectedDataId, setLastSelectedDataId] = useState(null);
   const [newInstructorName, setNewInstructorName] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [editFormData, setEditFormData] = useState({});
@@ -159,7 +160,21 @@ export default function App() {
     setSelectedRows([]);
   };
 
-  const handleSelectRow = (id) => setSelectedRows(prev => prev.includes(id) ? prev.filter(r => r !== id) : [...prev, id]);
+  const handleSelectRow = (id, e, filteredData) => {
+    if (e && e.shiftKey && lastSelectedDataId && filteredData) {
+      const currentIndex = filteredData.findIndex(c => c.id === id);
+      const lastIndex = filteredData.findIndex(c => c.id === lastSelectedDataId);
+      if (currentIndex !== -1 && lastIndex !== -1) {
+        const start = Math.min(currentIndex, lastIndex);
+        const end = Math.max(currentIndex, lastIndex);
+        const rangeIds = filteredData.slice(start, end + 1).map(c => c.id);
+        setSelectedRows(prev => [...new Set([...prev, ...rangeIds])]);
+        return;
+      }
+    }
+    setSelectedRows(prev => prev.includes(id) ? prev.filter(r => r !== id) : [...prev, id]);
+    setLastSelectedDataId(id);
+  };
   const handleSelectAll = (allIds, checked) => setSelectedRows(checked ? allIds : []);
 
   const requestSort = (key) => {

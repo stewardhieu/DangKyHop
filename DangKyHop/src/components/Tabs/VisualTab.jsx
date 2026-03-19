@@ -32,6 +32,7 @@ export default function VisualTab({
   const [filterMajor, setFilterMajor] = useState('');
   const [filterCohort, setFilterCohort] = useState('');
   const [filterMinStudents, setFilterMinStudents] = useState('');
+  const [lastSelectedId, setLastSelectedId] = useState(null);
 
   const uniqueInstructorsForTab = [TAB_ALL, ...instructors];
   const uniqueMajors = Array.from(new Set(classes.map(c => c.major))).filter(Boolean).sort();
@@ -122,9 +123,21 @@ export default function VisualTab({
                   key={cls.id} 
                   draggable={!!currentUser && (!isMultiSelectMode || sidebarSelection.includes(cls.id))}
                   onDragStart={(e) => { if(currentUser) handleDragStartClass(e, cls.id); }}
-                  onClick={() => {
+                  onClick={(e) => {
                     if (currentUser && isMultiSelectMode) {
-                      setSidebarSelection(prev => prev.includes(cls.id) ? prev.filter(id => id !== cls.id) : [...prev, cls.id]);
+                      if (e.shiftKey && lastSelectedId) {
+                        const currentIndex = unassignedClasses.findIndex(c => c.id === cls.id);
+                        const lastIndex = unassignedClasses.findIndex(c => c.id === lastSelectedId);
+                        if (currentIndex !== -1 && lastIndex !== -1) {
+                          const start = Math.min(currentIndex, lastIndex);
+                          const end = Math.max(currentIndex, lastIndex);
+                          const rangeIds = unassignedClasses.slice(start, end + 1).map(c => c.id);
+                          setSidebarSelection(prev => [...new Set([...prev, ...rangeIds])]);
+                        }
+                      } else {
+                        setSidebarSelection(prev => prev.includes(cls.id) ? prev.filter(id => id !== cls.id) : [...prev, cls.id]);
+                        setLastSelectedId(cls.id);
+                      }
                     }
                   }}
                   className={`p-2.5 bg-white border rounded-md text-sm transition-all relative group flex gap-2 items-start
