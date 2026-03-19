@@ -14,6 +14,7 @@ export default function Header({
   mainTab
 }) {
   const { currentUser, logout } = useAuth();
+  const [showExportMenu, setShowExportMenu] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
   const handleExport = async (format) => {
