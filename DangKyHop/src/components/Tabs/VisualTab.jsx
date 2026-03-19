@@ -32,28 +32,19 @@ export default function VisualTab({
   const [filterMajor, setFilterMajor] = useState('');
   const [filterCohort, setFilterCohort] = useState('');
   const [filterMinStudents, setFilterMinStudents] = useState('');
-  const [filterExtra1, setFilterExtra1] = useState('');
-  const [filterExtra2, setFilterExtra2] = useState('');
-  const [filterExtra3, setFilterExtra3] = useState('');
   const [lastSelectedId, setLastSelectedId] = useState(null);
 
   const uniqueInstructorsForTab = [TAB_ALL, ...instructors];
   const uniqueMajors = Array.from(new Set(classes.map(c => c.major))).filter(Boolean).sort();
   const uniqueCohorts = Array.from(new Set(classes.map(c => c.cohort))).filter(Boolean).sort();
-  const uniqueExtra1 = Array.from(new Set(classes.map(c => c.extra1))).filter(Boolean).sort();
-  const uniqueExtra2 = Array.from(new Set(classes.map(c => c.extra2))).filter(Boolean).sort();
-  const uniqueExtra3 = Array.from(new Set(classes.map(c => c.extra3))).filter(Boolean).sort();
 
   const unassignedClasses = classes.filter(c => {
     if (c.isAssigned) return false;
     if (activeInstructorTab !== TAB_ALL && c.instructor !== activeInstructorTab) return false;
     if (sidebarSearch && !c.name.toLowerCase().includes(sidebarSearch.toLowerCase()) && !c.instructor.toLowerCase().includes(sidebarSearch.toLowerCase())) return false;
     if (filterMajor && c.major !== filterMajor) return false;
-    if (filterCohort && (c.cohort || '') !== filterCohort) return false;
+    if (filterCohort && c.cohort !== filterCohort) return false;
     if (filterMinStudents && c.students < parseInt(filterMinStudents)) return false;
-    if (filterExtra1 && (c.extra1 || '') !== filterExtra1) return false;
-    if (filterExtra2 && (c.extra2 || '') !== filterExtra2) return false;
-    if (filterExtra3 && (c.extra3 || '') !== filterExtra3) return false;
     return true;
   });
 
@@ -87,30 +78,14 @@ export default function VisualTab({
           
           {showAdvancedFilters && (
             <div className="flex flex-col gap-2 p-2 bg-slate-50 border border-slate-200 rounded shadow-inner text-xs animate-in slide-in-from-top-2 duration-200">
+              <select value={filterMajor} onChange={e => setFilterMajor(e.target.value)} className="border border-slate-300 rounded px-2 py-1.5 focus:border-blue-500 focus:outline-none bg-white">
+                <option value="">-- Tất cả Khoa --</option>
+                {uniqueMajors.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
               <div className="flex gap-2">
-                <select value={filterMajor} onChange={e => setFilterMajor(e.target.value)} className="w-1/2 border border-slate-300 rounded px-2 py-1.5 focus:border-blue-500 focus:outline-none bg-white">
-                  <option value="">-- Khoa --</option>
-                  {uniqueMajors.map(m => <option key={m} value={m}>{m}</option>)}
-                </select>
                 <select value={filterCohort} onChange={e => setFilterCohort(e.target.value)} className="w-1/2 border border-slate-300 rounded px-2 py-1.5 focus:border-blue-500 focus:outline-none bg-white">
-                  <option value="">-- Khóa --</option>
+                  <option value="">-- Tất cả Khóa --</option>
                   {uniqueCohorts.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-              <div className="flex gap-2">
-                <select value={filterExtra1} onChange={e => setFilterExtra1(e.target.value)} className="w-1/2 border border-slate-300 rounded px-2 py-1.5 focus:border-blue-500 focus:outline-none bg-white">
-                  <option value="">-- Dữ liệu 1 --</option>
-                  {uniqueExtra1.map(e => <option key={e} value={e}>{e}</option>)}
-                </select>
-                <select value={filterExtra2} onChange={e => setFilterExtra2(e.target.value)} className="w-1/2 border border-slate-300 rounded px-2 py-1.5 focus:border-blue-500 focus:outline-none bg-white">
-                  <option value="">-- Dữ liệu 2 --</option>
-                  {uniqueExtra2.map(e => <option key={e} value={e}>{e}</option>)}
-                </select>
-              </div>
-              <div className="flex gap-2">
-                <select value={filterExtra3} onChange={e => setFilterExtra3(e.target.value)} className="w-1/2 border border-slate-300 rounded px-2 py-1.5 focus:border-blue-500 focus:outline-none bg-white">
-                  <option value="">-- Dữ liệu 3 --</option>
-                  {uniqueExtra3.map(e => <option key={e} value={e}>{e}</option>)}
                 </select>
                 <input type="number" placeholder="Sĩ số tối thiểu" value={filterMinStudents} onChange={e=>setFilterMinStudents(e.target.value)} className="w-1/2 border border-slate-300 rounded px-2 py-1.5 focus:border-blue-500 focus:outline-none bg-white" min="0" />
               </div>
@@ -192,14 +167,6 @@ export default function VisualTab({
                       <span className="flex items-center gap-1 text-[11px] truncate max-w-[130px] text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded" title={cls.major}>{cls.major}</span>
                     </div>
                     {activeInstructorTab === TAB_ALL && <div className="text-[10px] text-slate-400 mt-1.5 flex items-center gap-1 truncate" title={cls.instructor}><UserCircle size={12}/> GV: {cls.instructor}</div>}
-                    {(cls.cohort || cls.extra1 || cls.extra2 || cls.extra3) && (
-                      <div className="flex flex-wrap gap-1 mt-1 border-t border-slate-100 pt-1">
-                        {cls.cohort && <span className="text-[9px] bg-amber-50 text-amber-600 px-1 py-0.5 rounded border border-amber-100">{cls.cohort}</span>}
-                        {cls.extra1 && <span className="text-[9px] bg-teal-50 text-teal-600 px-1 py-0.5 rounded border border-teal-100">{cls.extra1}</span>}
-                        {cls.extra2 && <span className="text-[9px] bg-purple-50 text-purple-600 px-1 py-0.5 rounded border border-purple-100">{cls.extra2}</span>}
-                        {cls.extra3 && <span className="text-[9px] bg-indigo-50 text-indigo-600 px-1 py-0.5 rounded border border-indigo-100">{cls.extra3}</span>}
-                      </div>
-                    )}
                   </div>
                 </div>
               );

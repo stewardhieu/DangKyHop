@@ -40,16 +40,8 @@ export default function TableTab({
   const handleSelectAll = (allIds, checked) => setSelectedTableRows(checked ? allIds : []);
 
   const [columnFilters, setColumnFilters] = useState({
-    name: '', students: '', instructor: '', isAssigned: '', roomName: '', sessionText: '',
-    cohort: '', extra1: '', extra2: '', extra3: ''
+    name: '', students: '', instructor: '', isAssigned: '', roomName: '', sessionText: ''
   });
-
-  const columns = [
-    { label: 'Tên Lớp', key: 'name' }, { label: 'Khóa', key: 'cohort' }, { label: 'Sĩ số', key: 'students' }, 
-    { label: 'Giảng viên', key: 'instructor' }, { label: 'Trạng thái', key: 'isAssigned' }, 
-    { label: 'Phòng', key: 'roomName' }, { label: 'Dữ liệu 1', key: 'extra1' },
-    { label: 'Dữ liệu 2', key: 'extra2' }, { label: 'Dữ liệu 3', key: 'extra3' }
-  ];
 
   const handleFilterChange = (key, value) => {
     setColumnFilters(prev => ({ ...prev, [key]: value }));
@@ -77,12 +69,7 @@ export default function TableTab({
       const matchesRoom = cls.roomName.toLowerCase().includes(columnFilters.roomName.toLowerCase());
       const matchesTime = cls.sessionText.toLowerCase().includes(columnFilters.sessionText.toLowerCase());
 
-      const matchesCohort = !columnFilters.cohort || (cls.cohort || '').toLowerCase().includes(columnFilters.cohort.toLowerCase());
-      const matchesExtra1 = !columnFilters.extra1 || (cls.extra1 || '').toLowerCase().includes(columnFilters.extra1.toLowerCase());
-      const matchesExtra2 = !columnFilters.extra2 || (cls.extra2 || '').toLowerCase().includes(columnFilters.extra2.toLowerCase());
-      const matchesExtra3 = !columnFilters.extra3 || (cls.extra3 || '').toLowerCase().includes(columnFilters.extra3.toLowerCase());
-
-      return matchesSearch && matchesName && matchesStudents && matchesInstructor && matchesStatus && matchesRoom && matchesTime && matchesCohort && matchesExtra1 && matchesExtra2 && matchesExtra3;
+      return matchesSearch && matchesName && matchesStudents && matchesInstructor && matchesStatus && matchesRoom && matchesTime;
     })
   );
   
@@ -127,7 +114,11 @@ export default function TableTab({
                     />
                  )}
               </th>
-              {columns.map((col, idx) => (
+              {[
+                { label: 'Tên Lớp', key: 'name' }, { label: 'Sĩ số', key: 'students' }, 
+                { label: 'Giảng viên', key: 'instructor' }, { label: 'Trạng thái', key: 'isAssigned' }, 
+                { label: 'Phòng', key: 'roomName' }
+              ].map((col, idx) => (
                 <th key={idx} className="px-4 py-3 font-semibold cursor-pointer hover:bg-slate-100 transition-colors select-none" onClick={() => requestSort(col.key)}>
                   <div className="flex items-center gap-1">
                     {col.label}
@@ -139,22 +130,18 @@ export default function TableTab({
             </tr>
             <tr className="bg-slate-50/50 border-b border-slate-200">
               <th className="px-4 py-2"></th>
-              {columns.map((col, idx) => (
-                <th key={idx} className="px-2 py-1">
-                  {col.key === 'isAssigned' ? (
-                    <select value={columnFilters.isAssigned} onChange={e => handleFilterChange('isAssigned', e.target.value)} className="w-full border border-slate-200 rounded px-1.5 py-1 text-xs font-normal focus:border-blue-500 bg-white outline-none">
-                      <option value="">Tất cả</option>
-                      <option value="YES">Đã xếp</option>
-                      <option value="NO">Chưa xếp</option>
-                    </select>
-                  ) : (
-                    <input type="text" placeholder={`Lọc ${col.label}...`} value={columnFilters[col.key] || ''} onChange={e => handleFilterChange(col.key, e.target.value)} className="w-full border border-slate-200 rounded px-1.5 py-1 text-xs font-normal focus:border-blue-500 outline-none" />
-                  )}
-                </th>
-              ))}
+              <th className="px-2 py-1"><input type="text" placeholder="Lọc Tên..." value={columnFilters.name} onChange={e => handleFilterChange('name', e.target.value)} className="w-full border border-slate-200 rounded px-1.5 py-1 text-xs font-normal focus:border-blue-500 outline-none" /></th>
+              <th className="px-2 py-1"><input type="text" placeholder="Sĩ số..." value={columnFilters.students} onChange={e => handleFilterChange('students', e.target.value)} className="w-full border border-slate-200 rounded px-1.5 py-1 text-xs font-normal focus:border-blue-500 outline-none" /></th>
+              <th className="px-2 py-1"><input type="text" placeholder="Lọc GV..." value={columnFilters.instructor} onChange={e => handleFilterChange('instructor', e.target.value)} className="w-full border border-slate-200 rounded px-1.5 py-1 text-xs font-normal focus:border-blue-500 outline-none" /></th>
               <th className="px-2 py-1">
-                <input type="text" placeholder="Lọc Thời gian..." value={columnFilters.sessionText} onChange={e => handleFilterChange('sessionText', e.target.value)} className="w-full border border-slate-200 rounded px-1.5 py-1 text-xs font-normal focus:border-blue-500 outline-none" />
+                <select value={columnFilters.isAssigned} onChange={e => handleFilterChange('isAssigned', e.target.value)} className="w-full border border-slate-200 rounded px-1.5 py-1 text-xs font-normal focus:border-blue-500 bg-white outline-none">
+                  <option value="">Tất cả</option>
+                  <option value="YES">Đã xếp</option>
+                  <option value="NO">Chưa xếp</option>
+                </select>
               </th>
+              <th className="px-2 py-1"><input type="text" placeholder="Lọc Phòng..." value={columnFilters.roomName} onChange={e => handleFilterChange('roomName', e.target.value)} className="w-full border border-slate-200 rounded px-1.5 py-1 text-xs font-normal focus:border-blue-500 outline-none" /></th>
+              <th className="px-2 py-1"><input type="text" placeholder="Lọc Thời gian..." value={columnFilters.sessionText} onChange={e => handleFilterChange('sessionText', e.target.value)} className="w-full border border-slate-200 rounded px-1.5 py-1 text-xs font-normal focus:border-blue-500 outline-none" /></th>
             </tr>
           </thead>
           <tbody>
@@ -174,7 +161,6 @@ export default function TableTab({
                   )}
                 </td>
                 <td className="px-4 py-3 font-medium text-slate-800">{cls.name}</td>
-                <td className="px-4 py-3 text-slate-600 font-medium">{cls.cohort || '-'}</td>
                 <td className="px-4 py-3 text-slate-600">{cls.students}</td>
                 <td className="px-4 py-3 text-slate-600">{cls.instructor}</td>
                 <td className="px-4 py-3">
@@ -202,9 +188,6 @@ export default function TableTab({
                     </select>
                   ) : (cls.roomName || '-')}
                 </td>
-                <td className="px-4 py-3 text-slate-600 font-medium">{cls.extra1 || '-'}</td>
-                <td className="px-4 py-3 text-slate-600 font-medium">{cls.extra2 || '-'}</td>
-                <td className="px-4 py-3 text-slate-600 font-medium">{cls.extra3 || '-'}</td>
                 <td className="px-4 py-3 text-slate-600">
                   {currentUser && cls.isAssigned && cls.sessionObj ? (
                     <div className="flex gap-1">

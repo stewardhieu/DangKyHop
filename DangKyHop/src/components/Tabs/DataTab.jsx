@@ -29,10 +29,9 @@ export default function DataTab({
   if (type === 'DATA_CLASS') { 
     title = 'Dữ liệu Lớp học'; rawData = classes; 
     columns = [
-      { label: 'Tên Lớp', key: 'name' }, { label: 'Khóa', key: 'cohort' }, { label: 'Sĩ số', key: 'students' }, 
+      { label: 'Tên Lớp', key: 'name' }, { label: 'Số lượng', key: 'students' }, 
       { label: 'Ngành', key: 'major' }, { label: 'Giảng viên', key: 'instructor' }, 
-      { label: 'Mô tả', key: 'description' }, { label: 'Dữ liệu 1', key: 'extra1' }, 
-      { label: 'Dữ liệu 2', key: 'extra2' }, { label: 'Dữ liệu 3', key: 'extra3' }
+      { label: 'Khoá học', key: 'cohort' }
     ]; 
   } 
   else if (type === 'DATA_ROOM') { 
@@ -113,7 +112,6 @@ export default function DataTab({
                 {type === 'DATA_CLASS' && (
                 <>
                   <td className="p-2"><input type="text" placeholder="Tên lớp..." value={newClassData.name} onChange={e=>setNewClassData({...newClassData, name: e.target.value})} onKeyDown={e=>e.key==='Enter' && handleAddClassInline()} className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs focus:border-blue-500" /></td>
-                  <td className="p-2"><input type="text" placeholder="Khóa..." value={newClassData.cohort} onChange={e=>setNewClassData({...newClassData, cohort: e.target.value})} onKeyDown={e=>e.key==='Enter' && handleAddClassInline()} className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs focus:border-blue-500" /></td>
                   <td className="p-2"><input type="number" placeholder="Sĩ số..." value={newClassData.students} onChange={e=>setNewClassData({...newClassData, students: e.target.value})} onKeyDown={e=>e.key==='Enter' && handleAddClassInline()} className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs focus:border-blue-500" /></td>
                   <td className="p-2"><input type="text" placeholder="Ngành học..." value={newClassData.major} onChange={e=>setNewClassData({...newClassData, major: e.target.value})} onKeyDown={e=>e.key==='Enter' && handleAddClassInline()} className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs focus:border-blue-500" /></td>
                   <td className="p-2">
@@ -122,10 +120,7 @@ export default function DataTab({
                       {instructors.map((inst, i) => <option key={i} value={inst}>{inst}</option>)}
                     </select>
                   </td>
-                  <td className="p-2"><input type="text" placeholder="Mô tả..." value={newClassData.description} onChange={e=>setNewClassData({...newClassData, description: e.target.value})} onKeyDown={e=>e.key==='Enter' && handleAddClassInline()} className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs focus:border-blue-500" /></td>
-                  <td className="p-2"><input type="text" placeholder="Dữ liệu 1..." value={newClassData.extra1} onChange={e=>setNewClassData({...newClassData, extra1: e.target.value})} onKeyDown={e=>e.key==='Enter' && handleAddClassInline()} className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs focus:border-blue-500" /></td>
-                  <td className="p-2"><input type="text" placeholder="Dữ liệu 2..." value={newClassData.extra2} onChange={e=>setNewClassData({...newClassData, extra2: e.target.value})} onKeyDown={e=>e.key==='Enter' && handleAddClassInline()} className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs focus:border-blue-500" /></td>
-                  <td className="p-2"><input type="text" placeholder="Dữ liệu 3..." value={newClassData.extra3} onChange={e=>setNewClassData({...newClassData, extra3: e.target.value})} onKeyDown={e=>e.key==='Enter' && handleAddClassInline()} className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs focus:border-blue-500" /></td>
+                  <td className="p-2"><input type="text" placeholder="Khoá học..." value={newClassData.cohort} onChange={e=>setNewClassData({...newClassData, cohort: e.target.value})} onKeyDown={e=>e.key==='Enter' && handleAddClassInline()} className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs focus:border-blue-500" /></td>
                   <td className="p-2 text-center"><button onClick={handleAddClassInline} className="flex items-center justify-center gap-1 w-full bg-blue-600 text-white px-2 py-1.5 rounded text-xs hover:bg-blue-700 transition-colors shadow-sm"><Save size={14}/> Thêm</button></td>
                 </>
               )}
@@ -169,7 +164,6 @@ export default function DataTab({
                       {type === 'DATA_CLASS' && (
                         <>
                           <td className="p-1.5"><input type="text" value={editFormData.name} onChange={e=>setEditFormData({...editFormData, name: e.target.value})} className="w-full border rounded px-2 py-1 text-xs focus:border-blue-500 outline-none" /></td>
-                          <td className="p-1.5"><input type="text" value={editFormData.cohort || ''} onChange={e=>setEditFormData({...editFormData, cohort: e.target.value})} className="w-full border rounded px-2 py-1 text-xs focus:border-blue-500 outline-none" /></td>
                           <td className="p-1.5"><input type="number" value={editFormData.students} onChange={e=>setEditFormData({...editFormData, students: e.target.value})} className="w-full border rounded px-2 py-1 text-xs focus:border-blue-500 outline-none" /></td>
                           <td className="p-1.5"><input type="text" value={editFormData.major} onChange={e=>setEditFormData({...editFormData, major: e.target.value})} className="w-full border rounded px-2 py-1 text-xs focus:border-blue-500 outline-none" /></td>
                           <td className="p-1.5">
@@ -177,10 +171,7 @@ export default function DataTab({
                               {instructors.map((inst, i) => <option key={i} value={inst}>{inst}</option>)}
                             </select>
                           </td>
-                          <td className="p-1.5"><input type="text" value={editFormData.description} onChange={e=>setEditFormData({...editFormData, description: e.target.value})} className="w-full border rounded px-2 py-1 text-xs focus:border-blue-500 outline-none" /></td>
-                          <td className="p-1.5"><input type="text" value={editFormData.extra1 || ''} onChange={e=>setEditFormData({...editFormData, extra1: e.target.value})} className="w-full border rounded px-2 py-1 text-xs focus:border-blue-500 outline-none" /></td>
-                          <td className="p-1.5"><input type="text" value={editFormData.extra2 || ''} onChange={e=>setEditFormData({...editFormData, extra2: e.target.value})} className="w-full border rounded px-2 py-1 text-xs focus:border-blue-500 outline-none" /></td>
-                          <td className="p-1.5"><input type="text" value={editFormData.extra3 || ''} onChange={e=>setEditFormData({...editFormData, extra3: e.target.value})} className="w-full border rounded px-2 py-1 text-xs focus:border-blue-500 outline-none" /></td>
+                          <td className="p-1.5"><input type="text" value={editFormData.cohort} onChange={e=>setEditFormData({...editFormData, cohort: e.target.value})} className="w-full border rounded px-2 py-1 text-xs focus:border-blue-500 outline-none" /></td>
                         </>
                       )}
                       {type === 'DATA_ROOM' && (
@@ -202,14 +193,10 @@ export default function DataTab({
                       {type === 'DATA_CLASS' && (
                         <>
                           <td className="px-4 py-3 font-medium text-slate-800">{item.name}</td>
-                          <td className="px-4 py-3">{item.cohort || '-'}</td>
                           <td className="px-4 py-3">{item.students}</td>
                           <td className="px-4 py-3">{item.major}</td>
                           <td className="px-4 py-3 text-amber-700">{item.instructor}</td>
-                          <td className="px-4 py-3 truncate max-w-[150px]" title={item.description}>{item.description}</td>
-                          <td className="px-4 py-3">{item.extra1 || '-'}</td>
-                          <td className="px-4 py-3">{item.extra2 || '-'}</td>
-                          <td className="px-4 py-3">{item.extra3 || '-'}</td>
+                          <td className="px-4 py-3 text-slate-600" title={item.cohort}>{item.cohort}</td>
                         </>
                       )}
                       {type === 'DATA_ROOM' && (

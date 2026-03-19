@@ -66,7 +66,7 @@ export default function App() {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   // DATA TAB States
-  const [newClassData, setNewClassData] = useState({ name: '', students: '', major: '', instructor: '', description: '', cohort: '', extra1: '', extra2: '', extra3: '' });
+  const [newClassData, setNewClassData] = useState({ name: '', students: '', major: '', instructor: '', cohort: '' });
   const [newRoomData, setNewRoomData] = useState({ name: '', capacity: '' });
   const [lastSelectedDataId, setLastSelectedDataId] = useState(null);
   const [isExporting, setIsExporting] = useState(false);
@@ -197,7 +197,7 @@ export default function App() {
     if (!pasteData.trim()) return;
     const lines = pasteData.trim().split('\n').map(l => l.split('\t').map(c => c.trim()));
     if (mainTab === 'DATA_CLASS') {
-      const newCls = lines.map(cols => cols.length >= 2 ? { id: `C_IMP_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`, name: cols[0], students: parseInt(cols[1])||0, major: cols[2]||'', instructor: cols[3]||'', description: cols[4]||'', isAssigned: false } : null).filter(Boolean);
+      const newCls = lines.map(cols => cols.length >= 2 ? { id: `C_IMP_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`, name: cols[0], students: parseInt(cols[1])||0, major: cols[2]||'', instructor: cols[3]||'', cohort: cols[4]||'', isAssigned: false } : null).filter(Boolean);
       saveState([...classes, ...newCls], sessions);
     } else if (mainTab === 'DATA_ROOM') {
       const newRms = lines.map(cols => cols.length >= 2 ? { id: `R_IMP_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`, name: cols[0], capacity: parseInt(cols[1])||0 } : null).filter(Boolean);

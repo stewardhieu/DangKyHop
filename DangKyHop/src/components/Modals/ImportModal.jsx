@@ -21,7 +21,7 @@ export default function ImportModal({
         <div className="p-4 flex-1">
           <div className="mb-3 text-sm text-slate-700 bg-blue-50 border border-blue-100 p-3 rounded-md leading-relaxed">
             Yêu cầu hệ thống: Dữ liệu copy từ Excel phải tuân thủ chuẩn cấu trúc Tab-Separated. <br/>
-            {mainTab === 'DATA_CLASS' && <span className="font-semibold text-blue-800">Cấu trúc 5 cột: Tên Lớp | Số lượng | Ngành | Giảng viên | Mô tả</span>}
+            {mainTab === 'DATA_CLASS' && <span className="font-semibold text-blue-800">Cấu trúc 5 cột: Tên Lớp | Số lượng | Ngành | Giảng viên | Khoá học</span>}
             {mainTab === 'DATA_ROOM' && <span className="font-semibold text-blue-800">Cấu trúc 2 cột: Tên Phòng | Sức chứa tối đa (VD: P.201  150)</span>}
             {mainTab === 'DATA_INSTRUCTOR' && <span className="font-semibold text-blue-800">Cấu trúc 1 cột: Tên Giảng viên/QLLCN</span>}
           </div>
