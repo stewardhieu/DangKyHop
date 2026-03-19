@@ -36,7 +36,7 @@ export default function App() {
 
   // MODAL States
   const [activeModal, setActiveModal] = useState(null);
-  const [formData, setFormData] = useState({ roomName: '', instructor: '', selectedClassIds: [] });
+  const [formData, setFormData] = useState({ roomName: '', instructor: '', selectedClassIds: [], isNewRoom: false, newRoomName: '', newRoomCapacity: 150 });
 
   const saveState = useCallback((newClasses, newSessions, newRooms = rooms, newInstructors = instructors) => {
     const newState = { classes: newClasses, sessions: newSessions, rooms: newRooms, instructors: newInstructors };
@@ -133,7 +133,13 @@ export default function App() {
   };
 
   // --- DRAG & DROP LOGIC ---
-  const handleDragStartClass = (e, classId) => e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'class', id: classId }));
+  const handleDragStartClass = (e, classId) => {
+    let ids = [classId];
+    if (isMultiSelectMode && sidebarSelection.includes(classId)) {
+      ids = sidebarSelection;
+    }
+    e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'class', ids }));
+  };
   const handleDragStartSession = (e, sessionId) => e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'session', id: sessionId }));
   
   const handleDropOnGrid = (e, dayIndex, startHour) => {
@@ -142,8 +148,8 @@ export default function App() {
     const data = JSON.parse(dataStr);
     
     if (data.type === 'class') {
-      const targetClass = classes.find(c => c.id === data.id);
-      if (targetClass) openSessionModal(dayIndex, startHour, null, [targetClass.id]);
+      const validIds = data.ids.filter(id => classes.some(c => c.id === id));
+      if (validIds.length > 0) openSessionModal(dayIndex, startHour, null, validIds);
     } else if (data.type === 'session') {
       const targetSession = sessions.find(s => s.id === data.id);
       if (targetSession) saveState(classes, sessions.map(s => s.id === targetSession.id ? { ...s, dayIndex, startHour } : s));
@@ -154,10 +160,10 @@ export default function App() {
   const openSessionModal = (dayIndex, startHour, existingSessionId = null, initialClassIds = []) => {
     if (existingSessionId) {
       const session = sessions.find(s => s.id === existingSessionId);
-      setFormData({ roomName: session.roomName, instructor: session.instructor, selectedClassIds: session.classIds });
+      setFormData({ roomName: session.roomName, instructor: session.instructor, selectedClassIds: session.classIds, isNewRoom: false, newRoomName: '', newRoomCapacity: 150 });
       setActiveModal({ type: 'create_session', dayIndex, hour: startHour, existingSessionId });
     } else {
-      setFormData({ roomName: '', instructor: '', selectedClassIds: initialClassIds });
+      setFormData({ roomName: '', instructor: '', selectedClassIds: initialClassIds, isNewRoom: false, newRoomName: '', newRoomCapacity: 150 });
       setActiveModal({ type: 'create_session', dayIndex, hour: startHour, existingSessionId: null });
     }
   };
@@ -170,29 +176,36 @@ export default function App() {
   };
 
   const saveSession = () => {
-    if (!formData.roomName || formData.selectedClassIds.length === 0 || !formData.instructor) {
+    if ((!formData.isNewRoom && !formData.roomName) || (formData.isNewRoom && !formData.newRoomName) || formData.selectedClassIds.length === 0 || !formData.instructor) {
       alert("Vui lòng điền đủ: Phòng họp, Giảng viên và chọn ít nhất 1 lớp."); return;
     }
+    
+    const finalRoomName = formData.isNewRoom ? formData.newRoomName.trim() : formData.roomName;
+    const roomCapacity = formData.isNewRoom ? (parseInt(formData.newRoomCapacity) || 150) : (rooms.find(r=>r.name === finalRoomName)?.capacity || 150);
     const currentStudents = formData.selectedClassIds.reduce((sum, id) => sum + (classes.find(c=>c.id===id)?.students||0), 0);
-    const roomCapacity = rooms.find(r=>r.name === formData.roomName)?.capacity || 150;
     
     if (currentStudents > roomCapacity) {
-      if(!window.confirm(`Vượt quá sức chứa phòng ${formData.roomName} (${currentStudents}/${roomCapacity}). Bạn có chắc chắn muốn lấp lịch này?`)) return;
+      if(!window.confirm(`Vượt quá sức chứa phòng ${finalRoomName} (${currentStudents}/${roomCapacity}). Bạn có chắc chắn muốn lấp lịch này?`)) return;
     }
 
     let newSessions = [...sessions];
     let newClasses = classes.map(c => ({ ...c }));
+    let newRooms = [...rooms];
+
+    if (formData.isNewRoom && !rooms.some(r => r.name.toLowerCase() === finalRoomName.toLowerCase())) {
+      newRooms.push({ id: `R_INL_${Date.now()}`, name: finalRoomName, capacity: roomCapacity });
+    }
 
     if (activeModal.existingSessionId) {
       const oldSession = newSessions.find(s => s.id === activeModal.existingSessionId);
       oldSession.classIds.forEach(cid => { const c = newClasses.find(nc => nc.id === cid); if(c) c.isAssigned = false; });
-      newSessions = newSessions.map(s => s.id === activeModal.existingSessionId ? { ...s, roomName: formData.roomName, instructor: formData.instructor, classIds: formData.selectedClassIds, totalStudents: currentStudents } : s);
+      newSessions = newSessions.map(s => s.id === activeModal.existingSessionId ? { ...s, roomName: finalRoomName, instructor: formData.instructor, classIds: formData.selectedClassIds, totalStudents: currentStudents } : s);
     } else {
-      newSessions.push({ id: `S_${Date.now()}`, dayIndex: activeModal.dayIndex, startHour: activeModal.hour, duration: 1, roomName: formData.roomName, instructor: formData.instructor, classIds: formData.selectedClassIds, totalStudents: currentStudents });
+      newSessions.push({ id: `S_${Date.now()}`, dayIndex: activeModal.dayIndex, startHour: activeModal.hour, duration: 1, roomName: finalRoomName, instructor: formData.instructor, classIds: formData.selectedClassIds, totalStudents: currentStudents });
     }
     
     formData.selectedClassIds.forEach(cid => { const c = newClasses.find(nc => nc.id === cid); if(c) c.isAssigned = true; });
-    saveState(newClasses, newSessions);
+    saveState(newClasses, newSessions, newRooms);
     setActiveModal(null);
   };
 

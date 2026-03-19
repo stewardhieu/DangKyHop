@@ -18,7 +18,7 @@ export default function SessionModal({
   if (activeModal?.type !== 'create_session') return null;
 
   const currentStudents = formData.selectedClassIds.reduce((sum, id) => sum + (classes.find(c=>c.id===id)?.students||0), 0);
-  const roomCapacity = rooms.find(r=>r.name === formData.roomName)?.capacity || 150;
+  const roomCapacity = formData.isNewRoom ? (parseInt(formData.newRoomCapacity) || 150) : (rooms.find(r=>r.name === formData.roomName)?.capacity || 150);
   const percentage = Math.min(100, (currentStudents / roomCapacity) * 100);
   const isOverCapacity = currentStudents > roomCapacity;
 
@@ -38,10 +38,22 @@ export default function SessionModal({
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase">Phòng / Giảng đường (Dropdown)</label>
-                <select value={formData.roomName} onChange={e => setFormData({...formData, roomName: e.target.value})} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 shadow-sm bg-white">
-                  <option value="" disabled>-- Chọn phòng trống --</option>
-                  {rooms.map(r => <option key={r.id} value={r.name}>{r.name} (Sức chứa: {r.capacity})</option>)}
-                </select>
+                {!formData.isNewRoom ? (
+                  <select value={formData.roomName} onChange={e => {
+                    if (e.target.value === 'NEW_ROOM') setFormData({...formData, isNewRoom: true, roomName: ''});
+                    else setFormData({...formData, roomName: e.target.value});
+                  }} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 shadow-sm bg-white">
+                    <option value="" disabled>-- Chọn phòng trống --</option>
+                    {rooms.map(r => <option key={r.id} value={r.name}>{r.name} (Sức chứa: {r.capacity})</option>)}
+                    <option value="NEW_ROOM" className="font-bold text-blue-600">+ Thêm phòng trực tiếp...</option>
+                  </select>
+                ) : (
+                  <div className="flex gap-2">
+                    <input type="text" placeholder="Tên P.Họp mới" value={formData.newRoomName} onChange={e => setFormData({...formData, newRoomName: e.target.value})} className="w-2/3 border border-blue-400 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-sm bg-blue-50" autoFocus />
+                    <input type="number" placeholder="Sức chứa" value={formData.newRoomCapacity} onChange={e => setFormData({...formData, newRoomCapacity: e.target.value})} className="w-1/3 border border-blue-400 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-sm bg-blue-50" />
+                    <button onClick={() => setFormData({...formData, isNewRoom: false, newRoomName: '', newRoomCapacity: 150})} className="px-2 border border-slate-300 rounded-md hover:bg-slate-100 text-slate-500 bg-white shadow-sm transition-colors" title="Hủy thêm mới"><X size={16}/></button>
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase">Giảng viên / QLL (Dropdown)</label>

@@ -43,8 +43,8 @@ export default function VisualTab({
               return (
                 <div 
                   key={cls.id} 
-                  draggable={!isMultiSelectMode}
-                  onDragStart={(e) => !isMultiSelectMode && handleDragStartClass(e, cls.id)}
+                  draggable={!isMultiSelectMode || sidebarSelection.includes(cls.id)}
+                  onDragStart={(e) => handleDragStartClass(e, cls.id)}
                   onClick={() => {
                     if (isMultiSelectMode) {
                       setSidebarSelection(prev => prev.includes(cls.id) ? prev.filter(id => id !== cls.id) : [...prev, cls.id]);
@@ -99,14 +99,14 @@ export default function VisualTab({
         <div className="flex-1 overflow-auto relative bg-slate-100 custom-scrollbar">
           <div className="min-w-[1000px]">
             <div className="flex sticky top-0 z-20 bg-white border-b border-slate-300 shadow-sm">
-              <div className="w-16 shrink-0 border-r border-slate-200 bg-slate-50"></div>
+              <div className="w-16 shrink-0 border-r border-slate-200 bg-slate-50 sticky left-0 z-30"></div>
               {DAYS.map((day, idx) => <div key={idx} className={`flex-1 p-2 text-center text-sm font-bold border-r border-slate-200 ${(idx === 5 || idx === 6) ? 'text-amber-700 bg-amber-50' : 'text-slate-700'}`}>{day}</div>)}
             </div>
 
             {HOURS.map(hour => (
               <div key={hour} className="flex border-b border-slate-200">
-                <div className="w-16 shrink-0 bg-slate-50 border-r border-slate-200 flex items-center justify-center text-xs font-medium text-slate-500 relative">
-                  <span className="absolute -top-2.5 bg-slate-50 px-1">{`${hour}:00`}</span>
+                <div className="w-16 shrink-0 bg-slate-50 border-r border-slate-200 flex items-center justify-center text-xs font-medium text-slate-500 relative sticky left-0 z-10">
+                  <span className="absolute -top-2.5 bg-slate-50 px-1 w-full text-center">{`${hour}:00`}</span>
                 </div>
                 
                 {DAYS.map((_, dayIdx) => {
