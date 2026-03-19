@@ -79,6 +79,18 @@ export const exportToPDF = async (elementId, filename = 'ThoiKhoaBieu') => {
       useCORS: true, 
       backgroundColor: '#ffffff',
       onclone: (clonedDoc) => {
+        const clonedElement = clonedDoc.getElementById(elementId);
+        if (clonedElement) {
+           clonedElement.style.height = 'max-content';
+           clonedElement.style.overflow = 'visible';
+           const scrollables = clonedElement.querySelectorAll('.overflow-auto, .overflow-y-auto, .overflow-x-auto, .overflow-hidden, .custom-scrollbar');
+           scrollables.forEach(sc => {
+               sc.style.overflow = 'visible';
+               sc.style.height = 'max-content';
+               sc.style.maxHeight = 'none';
+           });
+        }
+
         const elements = clonedDoc.querySelectorAll('*');
         elements.forEach(el => {
           if (el.className && typeof el.className === 'string' && (el.className.includes('break-words') || el.className.includes('truncate'))) {
@@ -101,6 +113,23 @@ export const exportToPDF = async (elementId, filename = 'ThoiKhoaBieu') => {
         });
       }
     };
+
+    if (!header && rows.length === 0) {
+      // Fallback for TableTab or general views without standard row wrappers
+      const canvas = await html2canvas(element, { 
+        ...html2canvasOptions,
+        windowWidth: element.scrollWidth,
+        windowHeight: element.scrollHeight
+      });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('l', 'mm', 'a4'); 
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`${filename}.pdf`);
+      return;
+    }
 
     // A4 Landscape Format
     const pdf = new jsPDF('l', 'mm', 'a4'); 
