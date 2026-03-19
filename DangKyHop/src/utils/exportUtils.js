@@ -13,7 +13,21 @@ export const exportToImage = async (elementId, filename = 'ThoiKhoaBieu') => {
       scale: 2, 
       useCORS: true, 
       backgroundColor: '#ffffff',
+      windowWidth: element.scrollWidth,
+      windowHeight: element.scrollHeight,
       onclone: (clonedDoc) => {
+        const clonedElement = clonedDoc.getElementById(elementId);
+        if (clonedElement) {
+           clonedElement.style.height = 'max-content';
+           clonedElement.style.overflow = 'visible';
+           const scrollables = clonedElement.querySelectorAll('.overflow-auto, .overflow-y-auto, .overflow-x-auto, .overflow-hidden, .custom-scrollbar');
+           scrollables.forEach(sc => {
+               sc.style.overflow = 'visible';
+               sc.style.height = 'max-content';
+               sc.style.maxHeight = 'none';
+           });
+        }
+
         const elements = clonedDoc.querySelectorAll('*');
         elements.forEach(el => {
           const style = window.getComputedStyle(el);
@@ -29,6 +43,7 @@ export const exportToImage = async (elementId, filename = 'ThoiKhoaBieu') => {
         });
       }
     });
+
     const image = canvas.toDataURL('image/png');
     const link = document.createElement('a');
     link.href = image;
@@ -52,7 +67,21 @@ export const exportToPDF = async (elementId, filename = 'ThoiKhoaBieu') => {
       scale: 2, 
       useCORS: true, 
       backgroundColor: '#ffffff',
+      windowWidth: element.scrollWidth,
+      windowHeight: element.scrollHeight,
       onclone: (clonedDoc) => {
+        const clonedElement = clonedDoc.getElementById(elementId);
+        if (clonedElement) {
+           clonedElement.style.height = 'max-content';
+           clonedElement.style.overflow = 'visible';
+           const scrollables = clonedElement.querySelectorAll('.overflow-auto, .overflow-y-auto, .overflow-x-auto, .overflow-hidden, .custom-scrollbar');
+           scrollables.forEach(sc => {
+               sc.style.overflow = 'visible';
+               sc.style.height = 'max-content';
+               sc.style.maxHeight = 'none';
+           });
+        }
+
         const elements = clonedDoc.querySelectorAll('*');
         elements.forEach(el => {
           const style = window.getComputedStyle(el);
@@ -68,13 +97,30 @@ export const exportToPDF = async (elementId, filename = 'ThoiKhoaBieu') => {
         });
       }
     });
+
     const imgData = canvas.toDataURL('image/png');
     
+    // A4 Landscape Format
     const pdf = new jsPDF('l', 'mm', 'a4'); 
     const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+    const pdfHeight = pdf.internal.pageSize.getHeight();
     
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    const imgWidth = pdfWidth;
+    const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+    
+    let heightLeft = imgHeight;
+    let position = 0;
+    
+    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+    heightLeft -= pdfHeight;
+    
+    while (heightLeft > 0) {
+      position -= pdfHeight; 
+      pdf.addPage();
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pdfHeight;
+    }
+
     pdf.save(`${filename}.pdf`);
   } catch (error) {
     console.error('Export Error:', error);
