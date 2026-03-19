@@ -9,7 +9,26 @@ export const exportToImage = async (elementId, filename = 'ThoiKhoaBieu') => {
   }
 
   try {
-    const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+    const canvas = await html2canvas(element, { 
+      scale: 2, 
+      useCORS: true, 
+      backgroundColor: '#ffffff',
+      onclone: (clonedDoc) => {
+        const elements = clonedDoc.querySelectorAll('*');
+        elements.forEach(el => {
+          const style = window.getComputedStyle(el);
+          if (style.backgroundColor && style.backgroundColor.includes('oklch')) {
+             el.style.backgroundColor = 'transparent';
+          }
+          if (style.color && style.color.includes('oklch')) {
+             el.style.color = '#000000';
+          }
+          if (style.borderColor && style.borderColor.includes('oklch')) {
+             el.style.borderColor = '#cccccc';
+          }
+        });
+      }
+    });
     const image = canvas.toDataURL('image/png');
     const link = document.createElement('a');
     link.href = image;
@@ -29,7 +48,26 @@ export const exportToPDF = async (elementId, filename = 'ThoiKhoaBieu') => {
   }
 
   try {
-    const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+    const canvas = await html2canvas(element, { 
+      scale: 2, 
+      useCORS: true, 
+      backgroundColor: '#ffffff',
+      onclone: (clonedDoc) => {
+        const elements = clonedDoc.querySelectorAll('*');
+        elements.forEach(el => {
+          const style = window.getComputedStyle(el);
+          if (style.backgroundColor && style.backgroundColor.includes('oklch')) {
+             el.style.backgroundColor = 'transparent';
+          }
+          if (style.color && style.color.includes('oklch')) {
+             el.style.color = '#000000';
+          }
+          if (style.borderColor && style.borderColor.includes('oklch')) {
+             el.style.borderColor = '#cccccc';
+          }
+        });
+      }
+    });
     const imgData = canvas.toDataURL('image/png');
     
     const pdf = new jsPDF('l', 'mm', 'a4'); 
