@@ -56,6 +56,17 @@ export default function SessionModal({
                 )}
               </div>
               <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase">Thời gian</label>
+                <div className="flex gap-2">
+                  <select value={formData.dayIndex} onChange={e => setFormData({...formData, dayIndex: parseInt(e.target.value)})} className="w-1/2 border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 shadow-sm bg-white">
+                    {DAYS.map((d, i) => <option key={i} value={i}>{d}</option>)}
+                  </select>
+                  <select value={formData.hour} onChange={e => setFormData({...formData, hour: parseInt(e.target.value)})} className="w-1/2 border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 shadow-sm bg-white">
+                    {Array.from({ length: 14 }, (_, i) => i + 8).map(h => <option key={h} value={h}>{h}:00</option>)}
+                  </select>
+                </div>
+              </div>
+              <div>
                 <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase">Giảng viên / QLL (Dropdown)</label>
                 <select value={formData.instructor} onChange={e => setFormData({...formData, instructor: e.target.value})} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 shadow-sm bg-white">
                   <option value="" disabled>-- Chỉ định người đứng lớp --</option>

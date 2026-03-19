@@ -19,6 +19,7 @@ export default function App() {
   const [mainTab, setMainTab] = useState('VISUAL');
   const [roomFilter, setRoomFilter] = useState('');
   const [tableSearch, setTableSearch] = useState('');
+  const [sidebarSearch, setSidebarSearch] = useState('');
   const [activeInstructorTab, setActiveInstructorTab] = useState(TAB_ALL);
   const [sidebarSelection, setSidebarSelection] = useState([]);
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
@@ -157,13 +158,13 @@ export default function App() {
   };
 
   // --- MODAL LOGIC (CREATE & EDIT SESSION) ---
-  const openSessionModal = (dayIndex, startHour, existingSessionId = null, initialClassIds = []) => {
+  const openSessionModal = (dayIndex = 0, startHour = 8, existingSessionId = null, initialClassIds = []) => {
     if (existingSessionId) {
       const session = sessions.find(s => s.id === existingSessionId);
-      setFormData({ roomName: session.roomName, instructor: session.instructor, selectedClassIds: session.classIds, isNewRoom: false, newRoomName: '', newRoomCapacity: 150 });
+      setFormData({ roomName: session.roomName, instructor: session.instructor, selectedClassIds: session.classIds, isNewRoom: false, newRoomName: '', newRoomCapacity: 150, dayIndex: session.dayIndex, hour: session.startHour });
       setActiveModal({ type: 'create_session', dayIndex, hour: startHour, existingSessionId });
     } else {
-      setFormData({ roomName: '', instructor: '', selectedClassIds: initialClassIds, isNewRoom: false, newRoomName: '', newRoomCapacity: 150 });
+      setFormData({ roomName: '', instructor: '', selectedClassIds: initialClassIds, isNewRoom: false, newRoomName: '', newRoomCapacity: 150, dayIndex: dayIndex ?? 0, hour: startHour ?? 8 });
       setActiveModal({ type: 'create_session', dayIndex, hour: startHour, existingSessionId: null });
     }
   };
@@ -199,9 +200,9 @@ export default function App() {
     if (activeModal.existingSessionId) {
       const oldSession = newSessions.find(s => s.id === activeModal.existingSessionId);
       oldSession.classIds.forEach(cid => { const c = newClasses.find(nc => nc.id === cid); if(c) c.isAssigned = false; });
-      newSessions = newSessions.map(s => s.id === activeModal.existingSessionId ? { ...s, roomName: finalRoomName, instructor: formData.instructor, classIds: formData.selectedClassIds, totalStudents: currentStudents } : s);
+      newSessions = newSessions.map(s => s.id === activeModal.existingSessionId ? { ...s, roomName: finalRoomName, instructor: formData.instructor, classIds: formData.selectedClassIds, totalStudents: currentStudents, dayIndex: formData.dayIndex, startHour: formData.hour } : s);
     } else {
-      newSessions.push({ id: `S_${Date.now()}`, dayIndex: activeModal.dayIndex, startHour: activeModal.hour, duration: 1, roomName: finalRoomName, instructor: formData.instructor, classIds: formData.selectedClassIds, totalStudents: currentStudents });
+      newSessions.push({ id: `S_${Date.now()}`, dayIndex: formData.dayIndex, startHour: formData.hour, duration: 1, roomName: finalRoomName, instructor: formData.instructor, classIds: formData.selectedClassIds, totalStudents: currentStudents });
     }
     
     formData.selectedClassIds.forEach(cid => { const c = newClasses.find(nc => nc.id === cid); if(c) c.isAssigned = true; });
@@ -301,7 +302,7 @@ export default function App() {
       </div>
 
       <div className="flex flex-1 overflow-hidden shadow-sm bg-white rounded-b-lg border-x border-b border-slate-200">
-        {mainTab === 'VISUAL' && <VisualTab classes={classes} sessions={sessions} instructors={instructors} activeInstructorTab={activeInstructorTab} setActiveInstructorTab={setActiveInstructorTab} roomFilter={roomFilter} setRoomFilter={setRoomFilter} sidebarSelection={sidebarSelection} setSidebarSelection={setSidebarSelection} isMultiSelectMode={isMultiSelectMode} setIsMultiSelectMode={setIsMultiSelectMode} handleDragStartClass={handleDragStartClass} handleDragStartSession={handleDragStartSession} handleDropOnGrid={handleDropOnGrid} executeAutoSchedule={executeAutoSchedule} openSessionModal={openSessionModal} />}
+        {mainTab === 'VISUAL' && <VisualTab classes={classes} sessions={sessions} instructors={instructors} activeInstructorTab={activeInstructorTab} setActiveInstructorTab={setActiveInstructorTab} roomFilter={roomFilter} setRoomFilter={setRoomFilter} sidebarSelection={sidebarSelection} setSidebarSelection={setSidebarSelection} isMultiSelectMode={isMultiSelectMode} setIsMultiSelectMode={setIsMultiSelectMode} handleDragStartClass={handleDragStartClass} handleDragStartSession={handleDragStartSession} handleDropOnGrid={handleDropOnGrid} executeAutoSchedule={executeAutoSchedule} openSessionModal={openSessionModal} sidebarSearch={sidebarSearch} setSidebarSearch={setSidebarSearch} />}
         {mainTab === 'TABLE' && <TableTab classes={classes} sessions={sessions} tableSearch={tableSearch} setTableSearch={setTableSearch} sortConfig={sortConfig} requestSort={requestSort} applySort={applySort} />}
         {(mainTab === 'DATA_CLASS' || mainTab === 'DATA_ROOM' || mainTab === 'DATA_INSTRUCTOR') && <DataTab type={mainTab} classes={classes} rooms={rooms} instructors={instructors} sessions={sessions} selectedRows={selectedRows} editingId={editingId} editFormData={editFormData} sortConfig={sortConfig} requestSort={requestSort} applySort={applySort} handleSelectRow={handleSelectRow} handleSelectAll={handleSelectAll} handleBulkDelete={handleBulkDelete} newClassData={newClassData} setNewClassData={setNewClassData} handleAddClassInline={handleAddClassInline} newRoomData={newRoomData} setNewRoomData={setNewRoomData} handleAddRoomInline={handleAddRoomInline} newInstructorName={newInstructorName} setNewInstructorName={setNewInstructorName} handleAddInstructorInline={handleAddInstructorInline} setEditFormData={setEditFormData} saveInlineEdit={saveInlineEdit} setEditingId={setEditingId} startInlineEdit={startInlineEdit} deleteSingle={deleteSingle} setIsImportModalOpen={setIsImportModalOpen} />}
       </div>

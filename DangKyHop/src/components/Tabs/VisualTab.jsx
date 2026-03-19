@@ -18,9 +18,11 @@ export default function VisualTab({
   handleDragStartSession,
   handleDropOnGrid,
   executeAutoSchedule,
-  openSessionModal
+  openSessionModal,
+  sidebarSearch,
+  setSidebarSearch
 }) {
-  const unassignedClasses = classes.filter(c => !c.isAssigned && (activeInstructorTab === TAB_ALL || c.instructor === activeInstructorTab));
+  const unassignedClasses = classes.filter(c => !c.isAssigned && (activeInstructorTab === TAB_ALL || c.instructor === activeInstructorTab) && (c.name.toLowerCase().includes(sidebarSearch.toLowerCase()) || c.instructor.toLowerCase().includes(sidebarSearch.toLowerCase())));
   const uniqueInstructorsForTab = [TAB_ALL, ...instructors];
 
   return (
@@ -36,8 +38,28 @@ export default function VisualTab({
             <ListChecks size={16} />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-2 space-y-2 bg-slate-50 custom-scrollbar">
-          {unassignedClasses.length === 0 ? <div className="text-center text-sm text-slate-500 py-10 italic">Hàng đợi rỗng</div> : 
+        <div className="px-3 py-2 bg-white border-b border-slate-200 flex flex-col gap-2 shadow-sm relative z-10">
+          <input 
+            type="text" 
+            placeholder="Tìm kiếm lớp học, GV..." 
+            value={sidebarSearch}
+            onChange={(e) => setSidebarSearch(e.target.value)}
+            className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs focus:border-blue-500 transition-colors"
+          />
+          {isMultiSelectMode && (
+            <label className="flex items-center gap-2 text-sm text-slate-700 font-medium cursor-pointer hover:text-blue-700 transition-colors">
+              <input 
+                type="checkbox" 
+                checked={sidebarSelection.length === unassignedClasses.length && unassignedClasses.length > 0}
+                onChange={(e) => setSidebarSelection(e.target.checked ? unassignedClasses.map(c => c.id) : [])}
+                className="w-4 h-4 text-blue-600 rounded cursor-pointer"
+              />
+              Chọn tất cả lớp đang hiển thị ({unassignedClasses.length})
+            </label>
+          )}
+        </div>
+        <div className="flex-1 overflow-y-auto p-2 space-y-2 bg-slate-50 custom-scrollbar relative">
+          {unassignedClasses.length === 0 ? <div className="text-center text-sm text-slate-500 py-10 italic">Không tìm thấy lớp nào.</div> : 
             unassignedClasses.map(cls => {
               const isSelected = sidebarSelection.includes(cls.id);
               return (
@@ -62,7 +84,16 @@ export default function VisualTab({
                   )}
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-slate-800 truncate pr-5" title={cls.name}>{cls.name}</div>
-                    {cls.description && <Info size={14} className="absolute top-2.5 right-2 text-slate-400 cursor-help" title={`Mô tả: ${cls.description}`} />}
+                    {!isMultiSelectMode && (
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); openSessionModal(0, 8, null, [cls.id]); }}
+                        className="absolute top-2.5 right-2 text-blue-600 hover:text-white hover:bg-blue-600 bg-blue-50 p-1 rounded transition-colors"
+                        title="Xếp lịch trực tiếp"
+                      >
+                        <Plus size={14} />
+                      </button>
+                    )}
+                    {cls.description && <Info size={14} className={`absolute right-2 text-slate-400 cursor-help ${isMultiSelectMode ? 'top-2.5' : 'top-8'}`} title={`Mô tả: ${cls.description}`} />}
                     <div className="flex justify-between items-center text-slate-500 mt-1.5 border-t border-slate-100 pt-1.5">
                       <span className="flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded"><Users size={12}/> {cls.students}</span>
                       <span className="flex items-center gap-1 text-[11px] truncate max-w-[130px] text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded" title={cls.major}>{cls.major}</span>
