@@ -1,63 +1,30 @@
-// src/components/Header.jsx
-
 import React from 'react';
-import { Undo2, Redo2, Calendar, Settings2, Database } from 'lucide-react';
+import { Undo2, Redo2 } from 'lucide-react';
 
 export default function Header({
-  onUndo,
-  onRedo,
-  canUndo,
-  canRedo,
-  onOpenImport,
-  onOpenSettings,
-  title = 'Quản lý lịch họp'
+  classes,
+  rooms,
+  historyIndex,
+  historyLength,
+  handleUndo,
+  handleRedo
 }) {
   return (
-    <header className="mb-4 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm">
-      <div className="flex items-center gap-3">
-        <Calendar className="h-5 w-5 text-sky-600" />
-        <div>
-          <h1 className="text-lg font-semibold text-slate-900">{title}</h1>
-          <p className="text-sm text-slate-500">Tạo, phân bổ và quản lý lịch họp dễ dàng.</p>
-        </div>
+    <header className="bg-white border border-slate-200 shadow-sm rounded-lg p-4 mb-4 flex justify-between items-center relative z-10 transition-shadow hover:shadow-md">
+      <div>
+        <h1 className="text-xl font-bold text-slate-800 tracking-tight">Bảng Điều Khiển Quản Trị Lịch Họp (Ver 3.5 - Kéo Thả & Sắp Xếp)</h1>
+        <p className="text-sm text-slate-500 mt-1">
+          Tổng số lớp: <span className="font-semibold text-blue-600">{classes.length}</span> | 
+          Cơ sở vật chất: <span className="font-semibold text-amber-600">{rooms.length} phòng</span> |
+          Đã xếp lịch: <span className="font-semibold text-green-600">{classes.filter(c=>c.isAssigned).length}/{classes.length} lớp</span>
+        </p>
       </div>
-
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-          onClick={onUndo}
-          disabled={!canUndo}
-        >
-          <Undo2 className="h-4 w-4" />
-          Hoàn tác
+      <div className="flex gap-2">
+        <button onClick={handleUndo} disabled={historyIndex === 0} className="p-2 border border-slate-200 rounded hover:bg-slate-100 disabled:opacity-50 transition-colors" title="Hoàn tác (Undo)">
+          <Undo2 size={18} />
         </button>
-        <button
-          type="button"
-          className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-          onClick={onRedo}
-          disabled={!canRedo}
-        >
-          <Redo2 className="h-4 w-4" />
-          Làm lại
-        </button>
-
-        <button
-          type="button"
-          className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-          onClick={onOpenImport}
-        >
-          <Database className="h-4 w-4" />
-          Nhập dữ liệu
-        </button>
-
-        <button
-          type="button"
-          className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-          onClick={onOpenSettings}
-        >
-          <Settings2 className="h-4 w-4" />
-          Cài đặt
+        <button onClick={handleRedo} disabled={historyIndex === historyLength - 1} className="p-2 border border-slate-200 rounded hover:bg-slate-100 disabled:opacity-50 transition-colors" title="Làm lại (Redo)">
+          <Redo2 size={18} />
         </button>
       </div>
     </header>
