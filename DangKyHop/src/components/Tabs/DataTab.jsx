@@ -1,5 +1,6 @@
 import React from 'react';
 import { Upload, Trash2, ArrowUpDown, Plus, Save, Edit2, CheckSquare, X } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function DataTab({
   type,
@@ -22,6 +23,7 @@ export default function DataTab({
   setEditFormData, saveInlineEdit, setEditingId, startInlineEdit, deleteSingle,
   setIsImportModalOpen
 }) {
+  const { currentUser } = useAuth();
   let rawData = []; let columns = []; let title = '';
   
   if (type === 'DATA_CLASS') { 
@@ -52,10 +54,12 @@ export default function DataTab({
           <h2 className="text-lg font-bold text-slate-700">{title}</h2>
           {selectedRows.length > 0 && <span className="text-sm bg-blue-100 text-blue-700 px-2 py-1 rounded-md font-medium border border-blue-200">Đã chọn {selectedRows.length} bản ghi</span>}
         </div>
-        <div className="flex gap-2">
-          {selectedRows.length > 0 && <button onClick={() => handleBulkDelete(type)} className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded hover:bg-red-100 text-sm font-medium shadow-sm transition-colors"><Trash2 size={16} /> Xóa {selectedRows.length} mục</button>}
-          <button onClick={() => setIsImportModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded hover:bg-slate-700 text-sm font-medium shadow-sm transition-transform active:scale-95"><Upload size={16} /> Import Excel</button>
-        </div>
+        {currentUser && (
+          <div className="flex gap-2">
+            {selectedRows.length > 0 && <button onClick={() => handleBulkDelete(type)} className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded hover:bg-red-100 text-sm font-medium shadow-sm transition-colors"><Trash2 size={16} /> Xóa {selectedRows.length} mục</button>}
+            <button onClick={() => setIsImportModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded hover:bg-slate-700 text-sm font-medium shadow-sm transition-transform active:scale-95"><Upload size={16} /> Import Excel</button>
+          </div>
+        )}
       </div>
       
       <div className="flex-1 overflow-auto border border-slate-200 rounded custom-scrollbar relative">
@@ -63,7 +67,7 @@ export default function DataTab({
           <thead className="bg-slate-50 sticky top-0 text-slate-700 border-b border-slate-200 z-10 shadow-sm">
             <tr>
               <th className="px-3 py-3 w-10 text-center border-r border-slate-200">
-                <input type="checkbox" checked={isAllSelected} onChange={(e) => handleSelectAll(allIds, e.target.checked)} className="cursor-pointer w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                {currentUser && <input type="checkbox" checked={isAllSelected} onChange={(e) => handleSelectAll(allIds, e.target.checked)} className="cursor-pointer w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />}
               </th>
               {columns.map((col, i) => (
                 <th key={i} className="px-4 py-3 font-semibold cursor-pointer hover:bg-slate-100 transition-colors select-none" onClick={() => requestSort(col.key)}>
@@ -73,13 +77,14 @@ export default function DataTab({
                   </div>
                 </th>
               ))}
-              <th className="px-4 py-3 font-semibold w-24 text-center">Hành động</th>
+              {currentUser && <th className="px-4 py-3 font-semibold w-24 text-center">Hành động</th>}
             </tr>
           </thead>
           <tbody>
-            <tr className="bg-blue-50/50 border-b border-blue-100">
-              <td className="px-3 py-2 text-center border-r border-slate-200"><Plus size={16} className="text-blue-400 mx-auto"/></td>
-              {type === 'DATA_CLASS' && (
+            {currentUser && (
+              <tr className="bg-blue-50/50 border-b border-blue-100">
+                <td className="px-3 py-2 text-center border-r border-slate-200"><Plus size={16} className="text-blue-400 mx-auto"/></td>
+                {type === 'DATA_CLASS' && (
                 <>
                   <td className="p-2"><input type="text" placeholder="Tên lớp..." value={newClassData.name} onChange={e=>setNewClassData({...newClassData, name: e.target.value})} onKeyDown={e=>e.key==='Enter' && handleAddClassInline()} className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs focus:border-blue-500" /></td>
                   <td className="p-2"><input type="number" placeholder="Sĩ số..." value={newClassData.students} onChange={e=>setNewClassData({...newClassData, students: e.target.value})} onKeyDown={e=>e.key==='Enter' && handleAddClassInline()} className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs focus:border-blue-500" /></td>
@@ -107,7 +112,8 @@ export default function DataTab({
                   <td className="p-2 text-center"><button onClick={handleAddInstructorInline} className="flex items-center justify-center gap-1 w-full bg-blue-600 text-white px-2 py-1.5 rounded text-xs hover:bg-blue-700 transition-colors shadow-sm"><Save size={14}/> Thêm</button></td>
                 </>
               )}
-            </tr>
+              </tr>
+            )}
 
             {data.length === 0 ? <tr><td colSpan={columns.length+2} className="text-center py-8 text-slate-500">Chưa có dữ liệu.</td></tr> : null}
             {data.map((item, idx) => {
@@ -117,7 +123,7 @@ export default function DataTab({
               return (
                 <tr key={item.id || idx} className={`border-b border-slate-100 transition-colors ${isSelected ? 'bg-blue-50/50' : 'hover:bg-slate-50'} ${isEditing ? 'bg-amber-50 shadow-inner' : ''}`}>
                   <td className="px-3 py-2 text-center border-r border-slate-200">
-                    <input type="checkbox" checked={isSelected} onChange={() => handleSelectRow(item.id)} className="cursor-pointer w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                    {currentUser && <input type="checkbox" checked={isSelected} onChange={() => handleSelectRow(item.id)} className="cursor-pointer w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />}
                   </td>
                   
                   {isEditing ? (
@@ -169,12 +175,14 @@ export default function DataTab({
                       {type === 'DATA_INSTRUCTOR' && (
                         <td className="px-4 py-3 font-medium">{item.name}</td>
                       )}
-                      <td className="px-2 py-2 text-center">
-                        <div className="flex justify-center gap-1">
-                          <button onClick={() => startInlineEdit(type, item)} className="text-blue-500 hover:text-blue-700 p-1.5 rounded hover:bg-blue-50 transition-colors" title="Chỉnh sửa"><Edit2 size={16}/></button>
-                          <button onClick={() => deleteSingle(type, item.id)} className="text-slate-400 hover:text-red-600 p-1.5 rounded hover:bg-red-50 transition-colors" title="Xóa"><Trash2 size={16}/></button>
-                        </div>
-                      </td>
+                      {currentUser && (
+                        <td className="px-2 py-2 text-center">
+                          <div className="flex justify-center gap-1">
+                            <button onClick={() => startInlineEdit(type, item)} className="text-blue-500 hover:text-blue-700 p-1.5 rounded hover:bg-blue-50 transition-colors" title="Chỉnh sửa"><Edit2 size={16}/></button>
+                            <button onClick={() => deleteSingle(type, item.id)} className="text-slate-400 hover:text-red-600 p-1.5 rounded hover:bg-red-50 transition-colors" title="Xóa"><Trash2 size={16}/></button>
+                          </div>
+                        </td>
+                      )}
                     </>
                   )}
                 </tr>

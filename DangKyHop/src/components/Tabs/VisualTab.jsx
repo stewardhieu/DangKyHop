@@ -1,6 +1,7 @@
 import React from 'react';
 import { LayoutTemplate, ListChecks, Info, Users, UserCircle, Plus, Wand2 } from 'lucide-react';
 import { DAYS, HOURS, TAB_ALL } from '../../constants/data';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function VisualTab({
   classes,
@@ -23,6 +24,7 @@ export default function VisualTab({
   setSidebarSearch,
   setActiveModal
 }) {
+  const { currentUser } = useAuth();
   const unassignedClasses = classes.filter(c => !c.isAssigned && (activeInstructorTab === TAB_ALL || c.instructor === activeInstructorTab) && (c.name.toLowerCase().includes(sidebarSearch.toLowerCase()) || c.instructor.toLowerCase().includes(sidebarSearch.toLowerCase())));
   const uniqueInstructorsForTab = [TAB_ALL, ...instructors];
 
@@ -31,13 +33,15 @@ export default function VisualTab({
       <aside className="w-[340px] bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col overflow-hidden">
         <div className="p-3 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
           <h2 className="font-semibold text-slate-700 flex items-center gap-2 text-sm"><LayoutTemplate size={16}/> Hàng đợi chưa phân bổ</h2>
-          <button 
-            onClick={() => { setIsMultiSelectMode(!isMultiSelectMode); setSidebarSelection([]); }}
-            className={`p-1.5 rounded transition-colors ${isMultiSelectMode ? 'bg-blue-100 text-blue-700' : 'text-slate-500 hover:bg-slate-200'}`}
-            title="Chế độ chọn nhiều"
-          >
-            <ListChecks size={16} />
-          </button>
+          {currentUser && (
+            <button 
+              onClick={() => { setIsMultiSelectMode(!isMultiSelectMode); setSidebarSelection([]); }}
+              className={`p-1.5 rounded transition-colors ${isMultiSelectMode ? 'bg-blue-100 text-blue-700' : 'text-slate-500 hover:bg-slate-200'}`}
+              title="Chế độ chọn nhiều"
+            >
+              <ListChecks size={16} />
+            </button>
+          )}
         </div>
         <div className="px-3 py-2 bg-white border-b border-slate-200 flex flex-col gap-2 shadow-sm relative z-10">
           <input 
@@ -47,7 +51,7 @@ export default function VisualTab({
             onChange={(e) => setSidebarSearch(e.target.value)}
             className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs focus:border-blue-500 transition-colors"
           />
-          {isMultiSelectMode && (
+          {isMultiSelectMode && currentUser && (
             <div className="flex flex-col gap-2 mt-1">
               <label className="flex items-center gap-2 text-sm text-slate-700 font-medium cursor-pointer hover:text-blue-700 transition-colors">
                 <input 
@@ -76,15 +80,15 @@ export default function VisualTab({
               return (
                 <div 
                   key={cls.id} 
-                  draggable={!isMultiSelectMode || sidebarSelection.includes(cls.id)}
-                  onDragStart={(e) => handleDragStartClass(e, cls.id)}
+                  draggable={!!currentUser && (!isMultiSelectMode || sidebarSelection.includes(cls.id))}
+                  onDragStart={(e) => { if(currentUser) handleDragStartClass(e, cls.id); }}
                   onClick={() => {
-                    if (isMultiSelectMode) {
+                    if (currentUser && isMultiSelectMode) {
                       setSidebarSelection(prev => prev.includes(cls.id) ? prev.filter(id => id !== cls.id) : [...prev, cls.id]);
                     }
                   }}
                   className={`p-2.5 bg-white border rounded-md text-sm transition-all relative group flex gap-2 items-start
-                    ${isMultiSelectMode ? 'cursor-pointer hover:border-blue-400' : 'hover:border-blue-400 hover:shadow-sm cursor-grab active:cursor-grabbing'}
+                    ${!currentUser ? '' : isMultiSelectMode ? 'cursor-pointer hover:border-blue-400' : 'hover:border-blue-400 hover:shadow-sm cursor-grab active:cursor-grabbing'}
                     ${isSelected ? 'border-blue-500 ring-1 ring-blue-500 bg-blue-50/30' : 'border-slate-200'}
                   `}
                 >
@@ -95,7 +99,7 @@ export default function VisualTab({
                   )}
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-slate-800 truncate pr-5" title={cls.name}>{cls.name}</div>
-                    {!isMultiSelectMode && (
+                    {currentUser && !isMultiSelectMode && (
                       <button 
                         onClick={(e) => { e.stopPropagation(); openSessionModal(0, 8, null, [cls.id]); }}
                         className="absolute top-2.5 right-2 text-blue-600 hover:text-white hover:bg-blue-600 bg-blue-50 p-1 rounded transition-colors"
@@ -151,13 +155,15 @@ export default function VisualTab({
                   return (
                     <div 
                       key={`${dayIdx}-${hour}`} 
-                      className="flex-1 relative border-r border-slate-200 p-1 min-h-[85px] group bg-white hover:bg-blue-50 cursor-pointer min-w-0 transition-colors"
-                      onClick={() => openSessionModal(dayIdx, hour, null)}
-                      onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('bg-blue-100'); }}
-                      onDragLeave={(e) => { e.currentTarget.classList.remove('bg-blue-100'); }}
+                      className={`flex-1 relative border-r border-slate-200 p-1 min-h-[85px] group bg-white min-w-0 transition-colors ${currentUser ? 'hover:bg-blue-50 cursor-pointer' : ''}`}
+                      onClick={() => { if(currentUser) openSessionModal(dayIdx, hour, null); }}
+                      onDragOver={(e) => { if(currentUser) { e.preventDefault(); e.currentTarget.classList.add('bg-blue-100'); } }}
+                      onDragLeave={(e) => { if(currentUser) e.currentTarget.classList.remove('bg-blue-100'); }}
                       onDrop={(e) => {
-                        e.currentTarget.classList.remove('bg-blue-100');
-                        handleDropOnGrid(e, dayIdx, hour);
+                        if(currentUser) {
+                          e.currentTarget.classList.remove('bg-blue-100');
+                          handleDropOnGrid(e, dayIdx, hour);
+                        }
                       }}
                     >
                       <div className="w-full h-full flex flex-col gap-1 overflow-y-auto relative z-10 custom-scrollbar pr-1">
@@ -168,10 +174,10 @@ export default function VisualTab({
                           return (
                             <div 
                               key={session.id} 
-                              draggable
-                              onDragStart={(e) => { e.stopPropagation(); handleDragStartSession(e, session.id); }}
-                              onClick={(e) => { e.stopPropagation(); openSessionModal(dayIdx, hour, session.id); }}
-                              className="bg-blue-50 border border-blue-300 rounded p-1.5 shadow-sm flex flex-col transition-transform hover:-translate-y-0.5 cursor-grab active:cursor-grabbing w-full overflow-hidden"
+                              draggable={!!currentUser}
+                              onDragStart={(e) => { if(currentUser) { e.stopPropagation(); handleDragStartSession(e, session.id); } }}
+                              onClick={(e) => { if(currentUser) { e.stopPropagation(); openSessionModal(dayIdx, hour, session.id); } }}
+                              className={`bg-blue-50 border border-blue-300 rounded p-1.5 shadow-sm flex flex-col transition-transform w-full overflow-hidden ${currentUser ? 'hover:-translate-y-0.5 cursor-grab active:cursor-grabbing' : ''}`}
                             >
                               <div className="flex justify-between items-start mb-0.5 gap-1">
                                 <div className="font-bold text-blue-900 text-[11px] truncate max-w-[70%]" title={session.roomName}>{session.roomName}</div>
@@ -185,9 +191,11 @@ export default function VisualTab({
                           );
                         })}
                       </div>
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
-                        {visibleSessions.length === 0 && <Plus className="text-blue-300" size={24}/>}
-                      </div>
+                      {currentUser && (
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
+                          {visibleSessions.length === 0 && <Plus className="text-blue-300" size={24}/>}
+                        </div>
+                      )}
                     </div>
                   );
                 })}

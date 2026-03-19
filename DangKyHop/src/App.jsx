@@ -9,10 +9,44 @@ import DataTab from './components/Tabs/DataTab';
 import ImportModal from './components/Modals/ImportModal';
 import SessionModal from './components/Modals/SessionModal';
 import AutoScheduleModal from './components/Modals/AutoScheduleModal';
+import LoginModal from './components/Modals/LoginModal';
+import { useAuth } from './contexts/AuthContext';
+import { db } from './firebase';
+import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 
 export default function App() {
+  const { currentUser } = useAuth();
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
+  
   const [history, setHistory] = useState([{ classes: MOCK_CLASSES, sessions: [], rooms: MOCK_ROOMS, instructors: MOCK_INSTRUCTORS }]);
   const [historyIndex, setHistoryIndex] = useState(0);
+
+  useEffect(() => {
+    let unsub = () => {};
+    
+    if (currentUser) {
+      // Admin loads data once, then maintains local history for Undo/Redo
+      getDoc(doc(db, 'appData', 'main')).then(docSnap => {
+        if (docSnap.exists()) {
+          setHistory([docSnap.data()]);
+          setHistoryIndex(0);
+        }
+        setIsDataLoaded(true);
+      });
+    } else {
+      // Guest subscribes to real-time changes constantly
+      unsub = onSnapshot(doc(db, 'appData', 'main'), (docSnap) => {
+        if (docSnap.exists()) {
+          setHistory([docSnap.data()]);
+          setHistoryIndex(0);
+        }
+        setIsDataLoaded(true);
+      });
+    }
+
+    return () => unsub();
+  }, [currentUser]);
 
   const currentData = history[historyIndex] || history[0];
   const { classes, sessions, rooms, instructors } = currentData;
@@ -40,15 +74,36 @@ export default function App() {
   const [activeModal, setActiveModal] = useState(null);
   const [formData, setFormData] = useState({ roomName: '', instructor: '', selectedClassIds: [], isNewRoom: false, newRoomName: '', newRoomCapacity: 150 });
 
+  const syncToFirebase = async (dataState) => {
+    if (currentUser) {
+      try {
+        await setDoc(doc(db, 'appData', 'main'), dataState);
+      } catch (err) {
+        console.error("Lỗi đồng bộ Firebase:", err);
+      }
+    }
+  };
+
   const saveState = useCallback((newClasses, newSessions, newRooms = rooms, newInstructors = instructors) => {
     const newState = { classes: newClasses, sessions: newSessions, rooms: newRooms, instructors: newInstructors };
     const newHistory = [...history.slice(0, historyIndex + 1), newState];
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
-  }, [history, historyIndex, rooms, instructors]);
+    syncToFirebase(newState);
+  }, [history, historyIndex, rooms, instructors, currentUser]);
 
-  const handleUndo = () => { if (historyIndex > 0) setHistoryIndex(prev => prev - 1); };
-  const handleRedo = () => { if (historyIndex < history.length - 1) setHistoryIndex(prev => prev + 1); };
+  const handleUndo = () => { 
+    if (historyIndex > 0) {
+      setHistoryIndex(prev => prev - 1); 
+      syncToFirebase(history[historyIndex - 1]);
+    }
+  };
+  const handleRedo = () => { 
+    if (historyIndex < history.length - 1) {
+      setHistoryIndex(prev => prev + 1); 
+      syncToFirebase(history[historyIndex + 1]);
+    }
+  };
 
   // --- CRUD: INLINE EDITING & DELETION ---
   const handleAddClassInline = () => {
@@ -294,9 +349,19 @@ export default function App() {
     }
   };
 
+  if (!isDataLoaded) {
+    return (
+      <div className="h-screen bg-slate-100 flex items-center justify-center">
+        <div className="text-blue-600 font-medium animate-pulse flex items-center gap-2">
+           Đang tải dữ liệu từ máy chủ...
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen bg-slate-100 text-slate-900 font-sans p-4 flex flex-col overflow-hidden">
-      <Header classes={classes} rooms={rooms} historyIndex={historyIndex} historyLength={history.length} handleUndo={handleUndo} handleRedo={handleRedo} />
+      <Header classes={classes} rooms={rooms} historyIndex={historyIndex} historyLength={history.length} handleUndo={handleUndo} handleRedo={handleRedo} onOpenLogin={() => setIsLoginModalOpen(true)} />
 
       <div className="flex bg-white border border-slate-200 rounded-t-lg shadow-sm overflow-x-auto custom-scrollbar mb-0">
         <button onClick={() => setMainTab('VISUAL')} className={`px-5 py-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition-colors ${mainTab === 'VISUAL' ? 'border-blue-600 text-blue-700 bg-blue-50/30' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}><Calendar size={16}/> Lịch Trực Quan</button>
@@ -316,6 +381,7 @@ export default function App() {
       <ImportModal isImportModalOpen={isImportModalOpen} setIsImportModalOpen={setIsImportModalOpen} mainTab={mainTab} pasteData={pasteData} setPasteData={setPasteData} processImport={processImport} />
       <SessionModal activeModal={activeModal} setActiveModal={setActiveModal} formData={formData} setFormData={setFormData} rooms={rooms} instructors={instructors} classes={classes} sessions={sessions} deleteSession={deleteSession} saveSession={saveSession} toggleClassSelection={toggleClassSelection} />
       <AutoScheduleModal activeModal={activeModal} setActiveModal={setActiveModal} executeAutoSchedule={executeAutoSchedule} sidebarSelectionCount={sidebarSelection.length} />
+      <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
       <style dangerouslySetInnerHTML={{__html: `
         .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
