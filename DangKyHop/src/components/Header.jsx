@@ -16,7 +16,8 @@ export default function Header({
   academicYear,
   setAcademicYear,
   semester,
-  setSemester
+  setSemester,
+  handleRestoreOldData
 }) {
   const { currentUser, logout } = useAuth();
   const [showExportMenu, setShowExportMenu] = useState(false);
@@ -69,6 +70,17 @@ export default function Header({
             <option value="HK2">Học kỳ 2</option>
             <option value="HKHe">Học kỳ Hè</option>
           </select>
+          
+          {currentUser && (
+            <button 
+              onClick={handleRestoreOldData}
+              className="ml-2 px-3 py-1 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded transition-colors flex items-center gap-1 shadow-sm"
+              title="Khôi phục dữ liệu từ bản cũ"
+            >
+              <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
+              Khôi phục dữ liệu cũ
+            </button>
+          )}
         </div>
         <p className="text-sm text-slate-500 mt-1">
           Tổng số lớp: <span className="font-semibold text-blue-600">{classes.length}</span> | 
