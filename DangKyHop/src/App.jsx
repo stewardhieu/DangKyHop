@@ -27,6 +27,33 @@ export default function App() {
   const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [history, setHistory] = useState([{ classes: [], sessions: [], rooms: [], instructors: [] }]);
   const [historyIndex, setHistoryIndex] = useState(0);
+  const isInitialPreferenceLoaded = React.useRef(false);
+
+  // Load user preferences (last selected year/semester) on login
+  useEffect(() => {
+    if (currentUser) {
+      getDoc(doc(db, 'userPreferences', currentUser.uid)).then(docSnap => {
+        if (docSnap.exists()) {
+          const { academicYear: savedYear, semester: savedSemester } = docSnap.data();
+          if (savedYear) setAcademicYear(savedYear);
+          if (savedSemester) setSemester(savedSemester);
+        }
+        isInitialPreferenceLoaded.current = true;
+      });
+    } else {
+      isInitialPreferenceLoaded.current = true; // For guests, allow saving/defaulting immediately
+    }
+  }, [currentUser]);
+
+  // Save preferences whenever they change
+  useEffect(() => {
+    if (currentUser && isInitialPreferenceLoaded.current) {
+      setDoc(doc(db, 'userPreferences', currentUser.uid), { 
+        academicYear, 
+        semester 
+      }).catch(err => console.error("Lỗi lưu tùy chọn người dùng:", err));
+    }
+  }, [academicYear, semester, currentUser]);
 
   useEffect(() => {
     let unsub = () => {};
