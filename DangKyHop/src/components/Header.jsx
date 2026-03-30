@@ -12,7 +12,11 @@ export default function Header({
   handleRedo,
   onOpenLogin,
   mainTab,
-  setIsExporting
+  setIsExporting,
+  academicYear,
+  setAcademicYear,
+  semester,
+  setSemester
 }) {
   const { currentUser, logout } = useAuth();
   const [showExportMenu, setShowExportMenu] = useState(false);
@@ -38,8 +42,34 @@ export default function Header({
 
   return (
     <header className="bg-white border border-slate-200 shadow-sm rounded-lg p-4 mb-4 flex justify-between items-center relative z-10 transition-shadow hover:shadow-md">
-      <div>
-        <h1 className="text-xl font-bold text-slate-800 tracking-tight">Bảng Điều Khiển Quản Trị Lịch Họp (Ver 3.5 - Kéo Thả & Sắp Xếp)</h1>
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-bold text-slate-800 tracking-tight">Bảng Điều Khiển Lịch Họp</h1>
+          <div className="h-5 w-px bg-slate-300 ml-1"></div>
+          <select 
+            value={academicYear} 
+            onChange={e => setAcademicYear(e.target.value)}
+            className="text-sm font-semibold bg-slate-50 border border-slate-200 text-slate-700 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 hover:bg-slate-100 transition-colors cursor-pointer"
+          >
+            <option value="2023-2024">Năm học 2023-2024</option>
+            <option value="2024-2025">Năm học 2024-2025</option>
+            <option value="2025-2026">Năm học 2025-2026</option>
+            <option value="2026-2027">Năm học 2026-2027</option>
+            <option value="2027-2028">Năm học 2027-2028</option>
+            <option value="2028-2029">Năm học 2028-2029</option>
+            <option value="2029-2030">Năm học 2029-2030</option>
+            <option value="2030-2031">Năm học 2030-2031</option>
+          </select>
+          <select 
+            value={semester} 
+            onChange={e => setSemester(e.target.value)}
+            className="text-sm font-semibold bg-slate-50 border border-slate-200 text-slate-700 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 hover:bg-slate-100 transition-colors cursor-pointer"
+          >
+            <option value="HK1">Học kỳ 1</option>
+            <option value="HK2">Học kỳ 2</option>
+            <option value="HKHe">Học kỳ Hè</option>
+          </select>
+        </div>
         <p className="text-sm text-slate-500 mt-1">
           Tổng số lớp: <span className="font-semibold text-blue-600">{classes.length}</span> | 
           Cơ sở vật chất: <span className="font-semibold text-amber-600">{rooms.length} phòng</span> |

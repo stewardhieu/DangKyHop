@@ -21,6 +21,9 @@ export default function App() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   
+  const [academicYear, setAcademicYear] = useState('2024-2025');
+  const [semester, setSemester] = useState('HK1');
+  
   const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [history, setHistory] = useState([{ classes: [], sessions: [], rooms: [], instructors: [] }]);
   const [historyIndex, setHistoryIndex] = useState(0);
@@ -28,20 +31,30 @@ export default function App() {
   useEffect(() => {
     let unsub = () => {};
     
+    setIsDataLoaded(false);
+    const initialEmptyState = { classes: [], sessions: [], rooms: [], instructors: [] };
+    const docId = `main_${academicYear}_${semester}`;
+    
     if (currentUser) {
       // Admin loads data once, then maintains local history for Undo/Redo
-      getDoc(doc(db, 'appData', 'main')).then(docSnap => {
+      getDoc(doc(db, 'appData', docId)).then(docSnap => {
         if (docSnap.exists()) {
           setHistory([docSnap.data()]);
+          setHistoryIndex(0);
+        } else {
+          setHistory([initialEmptyState]);
           setHistoryIndex(0);
         }
         setIsDataLoaded(true);
       });
     } else {
       // Guest subscribes to real-time changes constantly
-      unsub = onSnapshot(doc(db, 'appData', 'main'), (docSnap) => {
+      unsub = onSnapshot(doc(db, 'appData', docId), (docSnap) => {
         if (docSnap.exists()) {
           setHistory([docSnap.data()]);
+          setHistoryIndex(0);
+        } else {
+          setHistory([initialEmptyState]);
           setHistoryIndex(0);
         }
         setIsDataLoaded(true);
@@ -49,7 +62,7 @@ export default function App() {
     }
 
     return () => unsub();
-  }, [currentUser]);
+  }, [currentUser, academicYear, semester]);
 
   const currentData = history[historyIndex] || history[0];
   const { classes, sessions, rooms, instructors } = currentData;
@@ -83,7 +96,8 @@ export default function App() {
   const syncToFirebase = async (dataState) => {
     if (currentUser) {
       try {
-        await setDoc(doc(db, 'appData', 'main'), dataState);
+        const docId = `main_${academicYear}_${semester}`;
+        await setDoc(doc(db, 'appData', docId), dataState);
       } catch (err) {
         console.error("Lỗi đồng bộ Firebase:", err);
       }
@@ -505,7 +519,7 @@ export default function App() {
 
   return (
     <div className="h-screen bg-slate-100 text-slate-900 font-sans p-4 flex flex-col overflow-hidden">
-      <Header classes={classes} rooms={rooms} historyIndex={historyIndex} historyLength={history.length} handleUndo={handleUndo} handleRedo={handleRedo} onOpenLogin={() => setIsLoginModalOpen(true)} mainTab={mainTab} setIsExporting={setIsExporting} />
+      <Header classes={classes} rooms={rooms} historyIndex={historyIndex} historyLength={history.length} handleUndo={handleUndo} handleRedo={handleRedo} onOpenLogin={() => setIsLoginModalOpen(true)} mainTab={mainTab} setIsExporting={setIsExporting} academicYear={academicYear} setAcademicYear={setAcademicYear} semester={semester} setSemester={setSemester} />
 
       <div className="flex bg-white border border-slate-200 rounded-t-lg shadow-sm overflow-x-auto custom-scrollbar mb-0 items-center justify-between">
         <div className="flex">
