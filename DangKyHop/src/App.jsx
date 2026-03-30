@@ -408,27 +408,6 @@ export default function App() {
   };
 
   // --- AUTO-SCHEDULE ALGORITHM (BIN PACKING) ---
-  const handleRestoreOldData = async () => {
-    if (!currentUser) return;
-    if (!window.confirm("Hệ thống sẽ tìm kiếm dữ liệu cũ (từ phiên bản trước) và sao chép vào Năm học/Kỳ học hiện tại bạn đang chọn. Bạn có chắc chắn muốn thực hiện?")) return;
-
-    try {
-      const oldDocRef = doc(db, 'appData', 'main');
-      const oldSnap = await getDoc(oldDocRef);
-
-      if (oldSnap.exists()) {
-        const oldData = oldSnap.data();
-        await saveState(oldData.classes || [], oldData.sessions || [], oldData.rooms || [], oldData.instructors || []);
-        alert("Khôi phục dữ liệu thành công! Dữ liệu đã được gán vào kỳ hiện tại.");
-      } else {
-        alert("Không tìm thấy dữ liệu cũ trên hệ thống.");
-      }
-    } catch (err) {
-      console.error("Lỗi khôi phục:", err);
-      alert("Lỗi: " + err.message);
-    }
-  };
-
   const executeAutoSchedule = (config) => {
     const { allowedDays, allowedPeriods, maxClassesPerSession, startDate, endDate } = config;
 
@@ -554,7 +533,6 @@ export default function App() {
         setAcademicYear={setAcademicYear} 
         semester={semester} 
         setSemester={setSemester} 
-        handleRestoreOldData={handleRestoreOldData}
       />
 
       <div className="flex bg-white border border-slate-200 rounded-t-lg shadow-sm overflow-x-auto custom-scrollbar mb-0 items-center justify-between">
