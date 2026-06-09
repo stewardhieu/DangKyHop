@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Undo2, Redo2, LogIn, LogOut, Download, Image as ImageIcon, FileText } from 'lucide-react';
+import { Undo2, Redo2, LogIn, LogOut, Download, Image as ImageIcon, FileText, Copy } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { exportToImage, exportToPDF } from '../utils/exportUtils';
+import { ACADEMIC_YEARS, SEMESTERS } from '../constants/data';
 
 export default function Header({
   classes,
@@ -16,7 +17,8 @@ export default function Header({
   academicYear,
   setAcademicYear,
   semester,
-  setSemester
+  setSemester,
+  onOpenCopyData
 }) {
   const { currentUser, logout } = useAuth();
   const [showExportMenu, setShowExportMenu] = useState(false);
@@ -51,24 +53,28 @@ export default function Header({
             onChange={e => setAcademicYear(e.target.value)}
             className="text-sm font-semibold bg-slate-50 border border-slate-200 text-slate-700 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 hover:bg-slate-100 transition-colors cursor-pointer"
           >
-            <option value="2023-2024">Năm học 2023-2024</option>
-            <option value="2024-2025">Năm học 2024-2025</option>
-            <option value="2025-2026">Năm học 2025-2026</option>
-            <option value="2026-2027">Năm học 2026-2027</option>
-            <option value="2027-2028">Năm học 2027-2028</option>
-            <option value="2028-2029">Năm học 2028-2029</option>
-            <option value="2029-2030">Năm học 2029-2030</option>
-            <option value="2030-2031">Năm học 2030-2031</option>
+            {ACADEMIC_YEARS.map(year => (
+              <option key={year} value={year}>Năm học {year}</option>
+            ))}
           </select>
           <select 
             value={semester} 
             onChange={e => setSemester(e.target.value)}
             className="text-sm font-semibold bg-slate-50 border border-slate-200 text-slate-700 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 hover:bg-slate-100 transition-colors cursor-pointer"
           >
-            <option value="HK1">Học kỳ 1</option>
-            <option value="HK2">Học kỳ 2</option>
-            <option value="HK3">Học kỳ 3</option>
+            {SEMESTERS.map(sem => (
+              <option key={sem.id} value={sem.id}>{sem.name}</option>
+            ))}
           </select>
+          {currentUser && (
+            <button 
+              onClick={onOpenCopyData}
+              className="text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 rounded-md px-2.5 py-1.5 transition-colors flex items-center gap-1 cursor-pointer shadow-sm hover:bg-blue-100"
+              title="Sao chép dữ liệu từ học kỳ khác"
+            >
+              <Copy size={13} /> Sao chép từ kỳ khác
+            </button>
+          )}
         </div>
         <p className="text-sm text-slate-500 mt-1">
           Tổng số lớp: <span className="font-semibold text-blue-600">{classes.length}</span> | 

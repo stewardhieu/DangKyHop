@@ -12,6 +12,7 @@ import ImportModal from './components/Modals/ImportModal';
 import SessionModal from './components/Modals/SessionModal';
 import AutoScheduleModal from './components/Modals/AutoScheduleModal';
 import LoginModal from './components/Modals/LoginModal';
+import CopyDataModal from './components/Modals/CopyDataModal';
 import { useAuth } from './contexts/AuthContext';
 import { db } from './firebase';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
@@ -21,6 +22,7 @@ export default function App() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [isInitialLoaded, setIsInitialLoaded] = useState(false);
+  const [isCopyDataModalOpen, setIsCopyDataModalOpen] = useState(false);
   
   const [academicYear, setAcademicYear] = useState('2024-2025');
   const [semester, setSemester] = useState('HK1');
@@ -181,6 +183,110 @@ export default function App() {
     setHistoryIndex(newHistory.length - 1);
     syncToFirebase(newState);
   }, [history, historyIndex, rooms, instructors, currentUser]);
+
+  const handleCopyData = async (sourceYear, sourceSemester, copyOptions, mergeOption) => {
+    if (sourceYear === academicYear && sourceSemester === semester) {
+      alert("Học kỳ nguồn và học kỳ đích hiện tại không được trùng nhau.");
+      return false;
+    }
+    
+    if (!copyOptions.classes && !copyOptions.rooms && !copyOptions.instructors) {
+      alert("Vui lòng chọn ít nhất một loại dữ liệu để sao chép.");
+      return false;
+    }
+
+    try {
+      const sourceDocId = `main_${sourceYear}_${sourceSemester}`;
+      const sourceSnap = await getDoc(doc(db, 'appData', sourceDocId));
+      
+      if (!sourceSnap.exists()) {
+        alert(`Không tìm thấy dữ liệu ở năm học ${sourceYear} và học kỳ ${sourceSemester}.`);
+        return false;
+      }
+      
+      const sourceData = sourceSnap.data();
+      let newClasses = [...classes];
+      let newRooms = [...rooms];
+      let newInstructors = [...instructors];
+      let newSessions = [...sessions];
+      
+      if (mergeOption === 'OVERWRITE') {
+        if (copyOptions.classes) {
+          newClasses = (sourceData.classes || []).map(c => ({
+            ...c,
+            id: c.id || `C_COP_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+            isAssigned: false
+          }));
+          newSessions = [];
+        }
+        if (copyOptions.rooms) {
+          newRooms = (sourceData.rooms || []).map(r => ({
+            ...r,
+            id: r.id || `R_COP_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`
+          }));
+          newSessions = [];
+        }
+        if (copyOptions.instructors) {
+          newInstructors = [...(sourceData.instructors || [])];
+        }
+      } else {
+        // MERGE:
+        if (copyOptions.classes) {
+          const sourceClasses = sourceData.classes || [];
+          sourceClasses.forEach(sCls => {
+            const idx = newClasses.findIndex(c => c.name.toLowerCase() === sCls.name.toLowerCase());
+            if (idx !== -1) {
+              newClasses[idx] = {
+                ...newClasses[idx],
+                students: sCls.students || newClasses[idx].students,
+                major: sCls.major || newClasses[idx].major,
+                instructor: sCls.instructor || newClasses[idx].instructor,
+                cohort: sCls.cohort || newClasses[idx].cohort
+              };
+            } else {
+              newClasses.push({
+                ...sCls,
+                id: `C_COP_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+                isAssigned: false
+              });
+            }
+          });
+        }
+        if (copyOptions.rooms) {
+          const sourceRooms = sourceData.rooms || [];
+          sourceRooms.forEach(sRoom => {
+            const idx = newRooms.findIndex(r => r.name.toLowerCase() === sRoom.name.toLowerCase());
+            if (idx !== -1) {
+              newRooms[idx] = {
+                ...newRooms[idx],
+                capacity: sRoom.capacity || newRooms[idx].capacity
+              };
+            } else {
+              newRooms.push({
+                ...sRoom,
+                id: `R_COP_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`
+              });
+            }
+          });
+        }
+        if (copyOptions.instructors) {
+          const sourceInstructors = sourceData.instructors || [];
+          sourceInstructors.forEach(sInst => {
+            if (!newInstructors.some(i => i.toLowerCase() === sInst.toLowerCase())) {
+              newInstructors.push(sInst);
+            }
+          });
+        }
+      }
+      
+      saveState(newClasses, newSessions, newRooms, newInstructors);
+      return true;
+    } catch (err) {
+      console.error("Lỗi khi sao chép dữ liệu:", err);
+      alert("Đã xảy ra lỗi trong quá trình sao chép dữ liệu. Vui lòng thử lại.");
+      return false;
+    }
+  };
 
   const handleUndo = () => { 
     if (historyIndex > 0) {
@@ -603,6 +709,7 @@ export default function App() {
         setAcademicYear={setAcademicYear} 
         semester={semester} 
         setSemester={setSemester} 
+        onOpenCopyData={() => setIsCopyDataModalOpen(true)}
       />
 
       <div className="flex bg-white border border-slate-200 rounded-t-lg shadow-sm overflow-x-auto custom-scrollbar mb-0 items-center justify-between">
@@ -665,6 +772,7 @@ export default function App() {
         </div>
       )}
       <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
+      <CopyDataModal isOpen={isCopyDataModalOpen} onClose={() => setIsCopyDataModalOpen(false)} currentYear={academicYear} currentSemester={semester} onCopy={handleCopyData} />
       
       {!isDataLoaded && (
         <div className="absolute inset-4 bg-slate-100/60 backdrop-blur-[2px] z-50 flex items-center justify-center rounded-lg border border-slate-200/50 animate-in fade-in duration-200">

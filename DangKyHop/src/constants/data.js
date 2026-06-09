@@ -20,3 +20,21 @@ export const PERIODS = [
   { id: 14, name: 'Tiết 14', time: '19h25\' - 20h15\'', session: 'Tối' },
   { id: 15, name: 'Tiết 15', time: '20h20\' - 21h10\'', session: 'Tối' }
 ];
+
+export const ACADEMIC_YEARS = [
+  '2023-2024',
+  '2024-2025',
+  '2025-2026',
+  '2026-2027',
+  '2027-2028',
+  '2028-2029',
+  '2029-2030',
+  '2030-2031'
+];
+
+export const SEMESTERS = [
+  { id: 'HK1', name: 'Học kỳ 1' },
+  { id: 'HK2', name: 'Học kỳ 2' },
+  { id: 'HK3', name: 'Học kỳ 3' }
+];
+
