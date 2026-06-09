@@ -20,6 +20,7 @@ export default function App() {
   const { currentUser } = useAuth();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const [isInitialLoaded, setIsInitialLoaded] = useState(false);
   
   const [academicYear, setAcademicYear] = useState('2024-2025');
   const [semester, setSemester] = useState('HK1');
@@ -90,6 +91,7 @@ export default function App() {
             setHistoryIndex(0);
           }
           setIsDataLoaded(true);
+          setIsInitialLoaded(true);
         })
         .catch(err => {
           console.error("Lỗi tải dữ liệu appData:", err);
@@ -97,6 +99,7 @@ export default function App() {
           setHistory([initialEmptyState]);
           setHistoryIndex(0);
           setIsDataLoaded(true);
+          setIsInitialLoaded(true);
         });
     } else {
       // Guest subscribes to real-time changes constantly
@@ -112,6 +115,7 @@ export default function App() {
             setHistoryIndex(0);
           }
           setIsDataLoaded(true);
+          setIsInitialLoaded(true);
         },
         (err) => {
           console.error("Lỗi lắng nghe dữ liệu appData:", err);
@@ -119,6 +123,7 @@ export default function App() {
           setHistory([initialEmptyState]);
           setHistoryIndex(0);
           setIsDataLoaded(true);
+          setIsInitialLoaded(true);
         }
       );
     }
@@ -572,7 +577,7 @@ export default function App() {
     }
   };
 
-  if (!isDataLoaded) {
+  if (!isInitialLoaded) {
     return (
       <div className="h-screen bg-slate-100 flex items-center justify-center">
         <div className="text-blue-600 font-medium animate-pulse flex items-center gap-2">
@@ -583,7 +588,7 @@ export default function App() {
   }
 
   return (
-    <div className="h-screen bg-slate-100 text-slate-900 font-sans p-4 flex flex-col overflow-hidden">
+    <div className="h-screen bg-slate-100 text-slate-900 font-sans p-4 flex flex-col overflow-hidden relative">
       <Header 
         classes={classes} 
         rooms={rooms} 
@@ -660,6 +665,16 @@ export default function App() {
         </div>
       )}
       <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
+      
+      {!isDataLoaded && (
+        <div className="absolute inset-4 bg-slate-100/60 backdrop-blur-[2px] z-50 flex items-center justify-center rounded-lg border border-slate-200/50 animate-in fade-in duration-200">
+          <div className="bg-white px-6 py-4 rounded-xl shadow-lg border border-slate-100 flex items-center gap-3">
+            <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-600 border-t-transparent"></div>
+            <span className="text-sm font-semibold text-slate-700">Đang cập nhật dữ liệu học kỳ...</span>
+          </div>
+        </div>
+      )}
+
       <style dangerouslySetInnerHTML={{__html: `
         .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
