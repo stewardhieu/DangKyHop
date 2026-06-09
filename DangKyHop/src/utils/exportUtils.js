@@ -1,6 +1,3 @@
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
-
 export const exportToImage = async (elementId, filename = 'ThoiKhoaBieu') => {
   const element = document.getElementById(elementId);
   if (!element) {
@@ -9,6 +6,7 @@ export const exportToImage = async (elementId, filename = 'ThoiKhoaBieu') => {
   }
 
   try {
+    const { default: html2canvas } = await import('html2canvas');
     const canvas = await html2canvas(element, { 
       scale: 2, 
       useCORS: true, 
@@ -71,6 +69,10 @@ export const exportToPDF = async (elementId, filename = 'ThoiKhoaBieu') => {
   }
 
   try {
+    const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+      import('html2canvas'),
+      import('jspdf')
+    ]);
     const header = element.querySelector('.header-row');
     const rows = element.querySelectorAll('.period-row');
 
