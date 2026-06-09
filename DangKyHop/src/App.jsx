@@ -31,18 +31,29 @@ export default function App() {
 
   // Load user preferences (last selected year/semester) on login
   useEffect(() => {
+    let isMounted = true;
     if (currentUser) {
-      getDoc(doc(db, 'userPreferences', currentUser.uid)).then(docSnap => {
-        if (docSnap.exists()) {
-          const { academicYear: savedYear, semester: savedSemester } = docSnap.data();
-          if (savedYear) setAcademicYear(savedYear);
-          if (savedSemester) setSemester(savedSemester);
-        }
-        isInitialPreferenceLoaded.current = true;
-      });
+      getDoc(doc(db, 'userPreferences', currentUser.uid))
+        .then(docSnap => {
+          if (!isMounted) return;
+          if (docSnap.exists()) {
+            const { academicYear: savedYear, semester: savedSemester } = docSnap.data();
+            if (savedYear) setAcademicYear(savedYear);
+            if (savedSemester) setSemester(savedSemester);
+          }
+          isInitialPreferenceLoaded.current = true;
+        })
+        .catch(err => {
+          console.error("Lỗi tải tùy chọn người dùng:", err);
+          if (!isMounted) return;
+          isInitialPreferenceLoaded.current = true; // Still mark as loaded so user can use default preferences
+        });
     } else {
       isInitialPreferenceLoaded.current = true; // For guests, allow saving/defaulting immediately
     }
+    return () => {
+      isMounted = false;
+    };
   }, [currentUser]);
 
   // Save preferences whenever they change
@@ -57,6 +68,7 @@ export default function App() {
 
   useEffect(() => {
     let unsub = () => {};
+    let isMounted = true;
     
     setIsDataLoaded(false);
     const initialEmptyState = { classes: [], sessions: [], rooms: [], instructors: [] };
@@ -64,31 +76,54 @@ export default function App() {
     
     if (currentUser) {
       // Admin loads data once, then maintains local history for Undo/Redo
-      getDoc(doc(db, 'appData', docId)).then(docSnap => {
-        if (docSnap.exists()) {
-          setHistory([docSnap.data()]);
-          setHistoryIndex(0);
-        } else {
+      getDoc(doc(db, 'appData', docId))
+        .then(docSnap => {
+          if (!isMounted) return;
+          if (docSnap.exists()) {
+            setHistory([docSnap.data()]);
+            setHistoryIndex(0);
+          } else {
+            setHistory([initialEmptyState]);
+            setHistoryIndex(0);
+          }
+          setIsDataLoaded(true);
+        })
+        .catch(err => {
+          console.error("Lỗi tải dữ liệu appData:", err);
+          if (!isMounted) return;
           setHistory([initialEmptyState]);
           setHistoryIndex(0);
-        }
-        setIsDataLoaded(true);
-      });
+          setIsDataLoaded(true);
+        });
     } else {
       // Guest subscribes to real-time changes constantly
-      unsub = onSnapshot(doc(db, 'appData', docId), (docSnap) => {
-        if (docSnap.exists()) {
-          setHistory([docSnap.data()]);
-          setHistoryIndex(0);
-        } else {
+      unsub = onSnapshot(
+        doc(db, 'appData', docId),
+        (docSnap) => {
+          if (!isMounted) return;
+          if (docSnap.exists()) {
+            setHistory([docSnap.data()]);
+            setHistoryIndex(0);
+          } else {
+            setHistory([initialEmptyState]);
+            setHistoryIndex(0);
+          }
+          setIsDataLoaded(true);
+        },
+        (err) => {
+          console.error("Lỗi lắng nghe dữ liệu appData:", err);
+          if (!isMounted) return;
           setHistory([initialEmptyState]);
           setHistoryIndex(0);
+          setIsDataLoaded(true);
         }
-        setIsDataLoaded(true);
-      });
+      );
     }
 
-    return () => unsub();
+    return () => {
+      isMounted = false;
+      unsub();
+    };
   }, [currentUser, academicYear, semester]);
 
   const currentData = history[historyIndex] || history[0];

@@ -67,7 +67,7 @@ export default function Header({
           >
             <option value="HK1">Học kỳ 1</option>
             <option value="HK2">Học kỳ 2</option>
-            <option value="HKHe">Học kỳ Hè</option>
+            <option value="HK3">Học kỳ 3</option>
           </select>
         </div>
         <p className="text-sm text-slate-500 mt-1">
