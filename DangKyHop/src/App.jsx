@@ -15,7 +15,7 @@ import LoginModal from './components/Modals/LoginModal';
 import CopyDataModal from './components/Modals/CopyDataModal';
 import { useAuth } from './contexts/AuthContext';
 import { db } from './firebase';
-import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot, getDocFromCache } from 'firebase/firestore';
 
 export default function App() {
   const { currentUser } = useAuth();
@@ -37,6 +37,22 @@ export default function App() {
     let isMounted = true;
     if (currentUser) {
       setIsPreferenceLoaded(false);
+      
+      // Try to load from cache first for instant preferences load
+      getDocFromCache(doc(db, 'userPreferences', currentUser.uid))
+        .then(docSnap => {
+          if (!isMounted) return;
+          if (docSnap.exists()) {
+            const { academicYear: savedYear, semester: savedSemester } = docSnap.data();
+            if (savedYear) setAcademicYear(savedYear);
+            if (savedSemester) setSemester(savedSemester);
+          }
+          setIsPreferenceLoaded(true);
+        })
+        .catch(() => {
+          // Ignore cache miss/error
+        });
+
       getDoc(doc(db, 'userPreferences', currentUser.uid))
         .then(docSnap => {
           if (!isMounted) return;
@@ -82,24 +98,53 @@ export default function App() {
     
     if (currentUser) {
       // Admin loads data once, then maintains local history for Undo/Redo
-      getDoc(doc(db, 'appData', docId))
+      let cacheLoaded = false;
+
+      // Try local cache first for instant load
+      getDocFromCache(doc(db, 'appData', docId))
         .then(docSnap => {
           if (!isMounted) return;
           if (docSnap.exists()) {
             setHistory([docSnap.data()]);
             setHistoryIndex(0);
-          } else {
-            setHistory([initialEmptyState]);
-            setHistoryIndex(0);
+            setIsDataLoaded(true);
+            setIsInitialLoaded(true);
+            cacheLoaded = true;
           }
+        })
+        .catch(() => {
+          // Ignore cache miss/error
+        });
+
+      // Query from server
+      getDoc(doc(db, 'appData', docId))
+        .then(docSnap => {
+          if (!isMounted) return;
+          const freshData = docSnap.exists() ? docSnap.data() : initialEmptyState;
+          
+          setHistory(prevHistory => {
+            // Only overwrite if the user hasn't made any edits yet
+            if (prevHistory.length <= 1) {
+              return [freshData];
+            }
+            return prevHistory;
+          });
+
+          setHistoryIndex(prevIndex => {
+            if (prevIndex === 0) return 0;
+            return prevIndex;
+          });
+
           setIsDataLoaded(true);
           setIsInitialLoaded(true);
         })
         .catch(err => {
           console.error("Lỗi tải dữ liệu appData:", err);
           if (!isMounted) return;
-          setHistory([initialEmptyState]);
-          setHistoryIndex(0);
+          if (!cacheLoaded) {
+            setHistory([initialEmptyState]);
+            setHistoryIndex(0);
+          }
           setIsDataLoaded(true);
           setIsInitialLoaded(true);
         });
