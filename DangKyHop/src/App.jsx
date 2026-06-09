@@ -27,12 +27,13 @@ export default function App() {
   const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [history, setHistory] = useState([{ classes: [], sessions: [], rooms: [], instructors: [] }]);
   const [historyIndex, setHistoryIndex] = useState(0);
-  const isInitialPreferenceLoaded = React.useRef(false);
+  const [isPreferenceLoaded, setIsPreferenceLoaded] = useState(false);
 
   // Load user preferences (last selected year/semester) on login
   useEffect(() => {
     let isMounted = true;
     if (currentUser) {
+      setIsPreferenceLoaded(false);
       getDoc(doc(db, 'userPreferences', currentUser.uid))
         .then(docSnap => {
           if (!isMounted) return;
@@ -41,15 +42,15 @@ export default function App() {
             if (savedYear) setAcademicYear(savedYear);
             if (savedSemester) setSemester(savedSemester);
           }
-          isInitialPreferenceLoaded.current = true;
+          setIsPreferenceLoaded(true);
         })
         .catch(err => {
           console.error("Lỗi tải tùy chọn người dùng:", err);
           if (!isMounted) return;
-          isInitialPreferenceLoaded.current = true; // Still mark as loaded so user can use default preferences
+          setIsPreferenceLoaded(true); // Still mark as loaded so user can use default preferences
         });
     } else {
-      isInitialPreferenceLoaded.current = true; // For guests, allow saving/defaulting immediately
+      setIsPreferenceLoaded(true); // For guests, allow loading immediately
     }
     return () => {
       isMounted = false;
@@ -58,15 +59,17 @@ export default function App() {
 
   // Save preferences whenever they change
   useEffect(() => {
-    if (currentUser && isInitialPreferenceLoaded.current) {
+    if (currentUser && isPreferenceLoaded) {
       setDoc(doc(db, 'userPreferences', currentUser.uid), { 
         academicYear, 
         semester 
       }).catch(err => console.error("Lỗi lưu tùy chọn người dùng:", err));
     }
-  }, [academicYear, semester, currentUser]);
+  }, [academicYear, semester, currentUser, isPreferenceLoaded]);
 
   useEffect(() => {
+    if (!isPreferenceLoaded) return;
+
     let unsub = () => {};
     let isMounted = true;
     
@@ -124,7 +127,7 @@ export default function App() {
       isMounted = false;
       unsub();
     };
-  }, [currentUser, academicYear, semester]);
+  }, [currentUser, academicYear, semester, isPreferenceLoaded]);
 
   const currentData = history[historyIndex] || history[0];
   const { classes, sessions, rooms, instructors } = currentData;
@@ -600,7 +603,7 @@ export default function App() {
       <div className="flex bg-white border border-slate-200 rounded-t-lg shadow-sm overflow-x-auto custom-scrollbar mb-0 items-center justify-between">
         <div className="flex">
           <button onClick={() => setMainTab('VISUAL')} className={`px-5 py-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition-colors ${mainTab === 'VISUAL' ? 'border-blue-600 text-blue-700 bg-blue-50/30' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}><CalendarIcon size={16}/> Lịch Trực Quan</button>
-          <button onClick={() => setMainTab('TABLE')} className={`px-5 py-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition-colors ${mainTab === 'TABLE' ? 'border-blue-600 text-blue-700 bg-blue-50/30' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}><TableProperties size={16}/> Danh sách phân bổ</button>
+          <button onClick={() => setMainTab('TABLE')} className={`px-5 py-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition-colors ${mainTab === 'TABLE' ? 'border-blue-600 text-blue-700 bg-blue-50/30' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}><TableProperties size={16}/> Thời khoá biểu</button>
           <div className="w-px h-6 bg-slate-300 mx-2 self-center"></div>
           <button onClick={() => setMainTab('DATA_CLASS')} className={`px-5 py-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition-colors ${mainTab === 'DATA_CLASS' ? 'border-blue-600 text-blue-700 bg-blue-50/30' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}><Database size={16}/> Dữ liệu Lớp học</button>
           <button onClick={() => setMainTab('DATA_ROOM')} className={`px-5 py-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition-colors ${mainTab === 'DATA_ROOM' ? 'border-blue-600 text-blue-700 bg-blue-50/30' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}><Settings2 size={16}/> Dữ liệu Phòng học</button>
